@@ -1,0 +1,149 @@
+/* styles/debug_toolkit.css */
+/* Debug-only calibration UI */
+
+.vc-debug-toolkit {
+  position: fixed;
+  left: 10px;
+  top: 10px;
+  width: min(360px, calc(100vw - 20px));
+  z-index: 999999;
+  background: rgba(10, 10, 10, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 14px;
+  padding: 10px;
+  color: #fff;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  user-select: none;
+}
+
+.vc-dbg-header {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.vc-dbg-title {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.vc-dbg-sub {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.vc-dbg-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.vc-dbg-label {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.vc-dbg-pill {
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc-dbg-select {
+  width: 100%;
+  font-size: 12px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+}
+
+.vc-dbg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.vc-dbg-cell {
+  display: grid;
+  grid-template-columns: 55px 1fr;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  font-size: 12px;
+}
+
+.vc-dbg-k {
+  opacity: 0.9;
+}
+
+.vc-dbg-v {
+  font-weight: 700;
+  text-align: right;
+}
+
+.vc-dbg-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.vc-dbg-btn {
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+}
+
+.vc-dbg-btn:active {
+  transform: translateY(1px);
+}
+
+.vc-dbg-note {
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: 0.9;
+  line-height: 1.25;
+}
+
+/* Overlay for drawing */
+.vc-debug-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999998;
+  pointer-events: none; /* off by default */
+}
+
+.vc-debug-overlay.is-active {
+  pointer-events: auto; /* capture drags when Draw is ON */
+  cursor: crosshair;
+}
+
+.vc-debug-draw-rect {
+  position: fixed;
+  border: 2px dashed rgba(0, 255, 255, 0.95);
+  background: rgba(0, 255, 255, 0.10);
+  display: none;
+  pointer-events: none;
+}
