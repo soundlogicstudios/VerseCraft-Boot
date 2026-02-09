@@ -1,1 +1,6 @@
-keep
+{
+  "hitboxes": [
+    { "id": "hunt_back_character", "x": 2, "y": 88, "w": 40, "h": 10, "action": "go:character_oregon_trail", "label": "Back to Character" },
+    { "id": "hunt_to_menu", "x": 2, "y": 2, "w": 18, "h": 8, "action": "go:menu", "label": "Menu" }
+  ]
+}
