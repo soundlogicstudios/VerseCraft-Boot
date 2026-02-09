@@ -1,1 +1,3 @@
-keep
+.screen[data-screen="menu"] .screen-bg {
+  background-image: url("../../assets/backgrounds/splash.webp");
+}
