@@ -1,5 +1,4 @@
 /* styles/debug_toolkit.css */
-/* Debug-only calibration UI */
 
 .vc-debug-toolkit {
   position: fixed;
@@ -126,14 +125,29 @@
 .vc-debug-toolkit.is-min .vc-dbg-body { display: none; }
 .vc-debug-toolkit.is-min .vc-dbg-header { margin-bottom: 0; }
 
-/* ✅ NEW: when drawing, lock page scroll (iOS friendly) */
-body.vc-draw-lock {
-  overflow: hidden !important;
-  position: fixed !important;
-  width: 100% !important;
-  height: 100% !important;
-  overscroll-behavior: none;
-  touch-action: none;
+/* ✅ NEW: fully hidden HUD (toolkit disappears, toggle stays) */
+.vc-debug-toolkit.is-hidden {
+  display: none;
+}
+
+/* Bottom-right toggle button (always available) */
+.vc-debug-toggle {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  z-index: 1000000;
+  font-size: 12px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(10, 10, 10, 0.78);
+  color: #fff;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.vc-debug-toggle:active {
+  transform: translateY(1px);
 }
 
 /* Overlay for drawing */
@@ -141,14 +155,14 @@ body.vc-draw-lock {
   position: fixed;
   inset: 0;
   z-index: 999998;
-  pointer-events: none; /* off by default */
+  pointer-events: none;
 }
 
 .vc-debug-overlay.is-active {
-  pointer-events: auto; /* capture drags when Draw is ON */
+  pointer-events: auto;
   cursor: crosshair;
-  touch-action: none;            /* ✅ prevents scroll/zoom gestures */
-  overscroll-behavior: none;     /* ✅ prevents rubber-band scroll */
+  touch-action: none;
+  overscroll-behavior: none;
 }
 
 .vc-debug-draw-rect {
