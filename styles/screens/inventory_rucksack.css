@@ -1,1 +1,25 @@
-keep
+/* styles/screens/inventory_rucksack.css */
+/* Visual-only inventory icon overlay for story_oregon_trail */
+
+.screen[data-screen="story_oregon_trail"]::before {
+  content: "";
+  position: absolute;
+  z-index: 5;             /* below hitboxes, above background */
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+
+  /* ✅ Match hitbox rectangle exactly */
+  left: 79.47%;
+  top: 49.14%;
+  width: 18.4%;
+  height: 10.99%;
+
+  /* Ensure no old right/bottom rules win */
+  right: auto;
+  bottom: auto;
+
+  background-image: url("../../assets/buttons/inventory-rucksack-button-oregon-trail.webp");
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.65));
+}
