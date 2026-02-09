@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>VerseCraft Boot</title>
+
+  <link rel="stylesheet" href="styles/base.css" />
+</head>
+
+<body>
+  <main id="appRoot" class="app-root" aria-label="VerseCraft Boot">
+    <!-- MENU (uses splash.webp as background) -->
+    <section class="screen" data-screen="menu" aria-label="Menu Screen">
+      <div class="screen-bg" aria-hidden="true"></div>
+      <div class="screen-runtime" aria-hidden="true"></div>
+      <div class="hitbox-layer" aria-label="Menu Hitboxes"></div>
+    </section>
+
+    <!-- STORY: Oregon Trail -->
+    <section class="screen" data-screen="story_oregon_trail" aria-label="Oregon Trail Story Screen">
+      <div class="screen-bg" aria-hidden="true"></div>
+      <div class="screen-runtime" aria-label="Story Runtime Container"></div>
+      <div class="hitbox-layer" aria-label="Story Hitboxes"></div>
+    </section>
+
+    <!-- CHARACTER: Oregon Trail -->
+    <section class="screen" data-screen="character_oregon_trail" aria-label="Oregon Trail Character Screen">
+      <div class="screen-bg" aria-hidden="true"></div>
+      <div class="screen-runtime" aria-label="Character Runtime Container"></div>
+      <div class="hitbox-layer" aria-label="Character Hitboxes"></div>
+    </section>
+
+    <!-- HUNT: Oregon Trail -->
+    <section class="screen" data-screen="hunt_oregon_trail" aria-label="Oregon Trail Hunt Screen">
+      <div class="screen-bg" aria-hidden="true"></div>
+      <div class="screen-runtime" aria-label="Hunt Runtime Container"></div>
+      <div class="hitbox-layer" aria-label="Hunt Hitboxes"></div>
+    </section>
+
+    <!-- INVENTORY: Oregon Trail -->
+    <section class="screen" data-screen="inventory_oregon_trail" aria-label="Oregon Trail Inventory Screen">
+      <div class="screen-bg" aria-hidden="true"></div>
+      <div class="screen-runtime" aria-label="Inventory Runtime Container"></div>
+      <div class="hitbox-layer" aria-label="Inventory Hitboxes"></div>
+    </section>
+  </main>
+
+  <script type="module" src="src/core/bootstrap.js"></script>
+</body>
+</html>
