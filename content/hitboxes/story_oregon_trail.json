@@ -1,13 +1,31 @@
 {
   "hitboxes": [
-    { "id": "story_to_character", "x": 80.53,
-  "y": 64.36,
-  "w": 15.73,
-  "h": 5.02,
-  "action": "go:character_oregon_trail",
-  "label": "Character"
-}
-,
-    { "id": "story_to_menu", "x": 2, "y": 88, "w": 18, "h": 10, "action": "go:menu", "label": "Menu" }
+    {
+      "id": "menu",
+      "x": 2.13,
+      "y": 0.78,
+      "w": 19.47,
+      "h": 7.22,
+      "action": "go:menu",
+      "label": "Menu"
+    },
+    {
+      "id": "to_character",
+      "x": 2.13,
+      "y": 71.9,
+      "w": 17.87,
+      "h": 5.49,
+      "action": "go:character_oregon_trail",
+      "label": "Character"
+    },
+    {
+      "id": "to_inventory",
+      "x": 78.93,
+      "y": 71.9,
+      "w": 17.87,
+      "h": 5.49,
+      "action": "go:inventory_oregon_trail",
+      "label": "Inventory"
+    }
   ]
 }
