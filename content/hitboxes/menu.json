@@ -1,1 +1,7 @@
-keep
+{
+  "hitboxes": [
+    { "id": "menu_to_story", "x": 12, "y": 68, "w": 76, "h": 10, "action": "go:story_oregon_trail", "label": "Start Story" },
+    { "id": "menu_to_character", "x": 12, "y": 80, "w": 76, "h": 10, "action": "go:character_oregon_trail", "label": "Character Panel" },
+    { "id": "menu_to_hunt", "x": 12, "y": 92, "w": 76, "h": 8, "action": "go:hunt_oregon_trail", "label": "Go Hunting" }
+  ]
+}
