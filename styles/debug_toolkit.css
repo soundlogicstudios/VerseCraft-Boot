@@ -38,9 +38,7 @@
   margin-top: 2px;
 }
 
-.vc-dbg-body {
-  display: block;
-}
+.vc-dbg-body { display: block; }
 
 .vc-dbg-row {
   display: grid;
@@ -50,10 +48,7 @@
   margin-top: 8px;
 }
 
-.vc-dbg-label {
-  font-size: 12px;
-  opacity: 0.9;
-}
+.vc-dbg-label { font-size: 12px; opacity: 0.9; }
 
 .vc-dbg-pill {
   font-size: 12px;
@@ -95,14 +90,8 @@
   font-size: 12px;
 }
 
-.vc-dbg-k {
-  opacity: 0.9;
-}
-
-.vc-dbg-v {
-  font-weight: 700;
-  text-align: right;
-}
+.vc-dbg-k { opacity: 0.9; }
+.vc-dbg-v { font-weight: 700; text-align: right; }
 
 .vc-dbg-actions {
   display: grid;
@@ -119,10 +108,7 @@
   background: rgba(255, 255, 255, 0.10);
   color: #fff;
 }
-
-.vc-dbg-btn:active {
-  transform: translateY(1px);
-}
+.vc-dbg-btn:active { transform: translateY(1px); }
 
 .vc-dbg-note {
   margin-top: 10px;
@@ -131,19 +117,23 @@
   line-height: 1.25;
 }
 
-/* NEW: minimized mode */
+/* Minimized mode */
 .vc-debug-toolkit.is-min {
   width: min(220px, calc(100vw - 20px));
   padding: 8px;
 }
-
 .vc-debug-toolkit.is-min .vc-dbg-sub,
-.vc-debug-toolkit.is-min .vc-dbg-body {
-  display: none;
-}
+.vc-debug-toolkit.is-min .vc-dbg-body { display: none; }
+.vc-debug-toolkit.is-min .vc-dbg-header { margin-bottom: 0; }
 
-.vc-debug-toolkit.is-min .vc-dbg-header {
-  margin-bottom: 0;
+/* ✅ NEW: when drawing, lock page scroll (iOS friendly) */
+body.vc-draw-lock {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  overscroll-behavior: none;
+  touch-action: none;
 }
 
 /* Overlay for drawing */
@@ -157,6 +147,8 @@
 .vc-debug-overlay.is-active {
   pointer-events: auto; /* capture drags when Draw is ON */
   cursor: crosshair;
+  touch-action: none;            /* ✅ prevents scroll/zoom gestures */
+  overscroll-behavior: none;     /* ✅ prevents rubber-band scroll */
 }
 
 .vc-debug-draw-rect {
