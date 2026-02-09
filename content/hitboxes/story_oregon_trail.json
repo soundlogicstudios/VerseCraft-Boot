@@ -10,20 +10,20 @@
       "label": "Menu"
     },
     {
-      "id": "to_character",
-      "x": 2.13,
-      "y": 71.9,
-      "w": 17.87,
-      "h": 5.49,
+      "id": "character",
+      "x": 80,
+      "y": 62.17,
+      "w": 17.6,
+      "h": 8.16,
       "action": "go:character_oregon_trail",
       "label": "Character"
     },
     {
-      "id": "to_inventory",
-      "x": 78.93,
-      "y": 71.9,
-      "w": 17.87,
-      "h": 5.49,
+      "id": "inventory",
+      "x": 79.47,
+      "y": 70.8,
+      "w": 17.33,
+      "h": 7.54,
       "action": "go:inventory_oregon_trail",
       "label": "Inventory"
     }
