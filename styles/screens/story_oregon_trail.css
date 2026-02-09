@@ -18,52 +18,61 @@
 .screen[data-screen="story_oregon_trail"]::after {
   content: "";
   position: absolute;
-  z-index: 5;             /* BELOW hitboxes, ABOVE background */
-  pointer-events: none;   /* don't block clicks */
+  z-index: 5;
+  pointer-events: none;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   filter: drop-shadow(0 10px 18px rgba(0,0,0,0.65));
 }
 
-/* ✅ Inventory rucksack (original rule – kept for additive safety) */
+/* Inventory rucksack (original rule kept) */
 .screen[data-screen="story_oregon_trail"]::before {
   right: 3vw;
   bottom: 5vh;
-
   width: clamp(96px, 18vw, 180px);
   height: clamp(96px, 18vw, 180px);
-
   background-image: url("../../assets/buttons/inventory-rucksack-button-oregon-trail.webp");
 }
 
-/* ✅ Character button (bottom-left) */
+/* Character button (original rule kept) */
 .screen[data-screen="story_oregon_trail"]::after {
   left: 3vw;
   bottom: 5.2vh;
-
   width: clamp(200px, 48vw, 340px);
   height: clamp(64px, 14vw, 110px);
-
   background-image: url("../../assets/buttons/character-button-oregon-trail.webp");
 }
 
 /* =========================================================
-   ADDITIVE OVERRIDE
-   Center-anchored inventory icon
-   Matches hitbox center so scaling doesn't drift
+   INVENTORY ICON — CENTER ANCHORED (LOCKED)
    ========================================================= */
 
 .screen.is-active[data-screen="story_oregon_trail"]::before {
-  /* Hitbox center = (88.67%, 54.64%) */
   left: 88.67% !important;
   top: 54.64% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 30% !important;
+  height: 30% !important;
+  right: auto !important;
+  bottom: auto !important;
+}
+
+/* =========================================================
+   CHARACTER BUTTON — NEW CENTER ANCHORED CONTROL
+   (MOVE + RESIZE SAFELY HERE)
+   ========================================================= */
+
+.screen.is-active[data-screen="story_oregon_trail"]::after {
+  /* 🔥 Starting center position (adjust in inspector) */
+  left: 26% !important;
+  top: 82% !important;
 
   transform: translate(-50%, -50%) !important;
 
-  /* Bigger size — adjust only these if needed */
-  width: 41.5% !important;
-  height: 41.5% !important;
+  /* 🔥 Bigger size — change ONLY these numbers */
+  width: 48% !important;
+  height: 18% !important;
 
   right: auto !important;
   bottom: auto !important;
