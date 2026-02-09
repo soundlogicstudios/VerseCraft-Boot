@@ -6,6 +6,7 @@
 // - Draw rectangle on active screen (percent + px readout)
 // - Select an existing hitbox and preview-adjust it
 // - Copy JSON snippet for hitbox config (x,y,w,h in percents)
+// - NEW: Minimize/Restore so it doesn't cover the screen
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -21,7 +22,6 @@ function rect_to_percent(boxPx, screenRect) {
   const w = (boxPx.width / screenRect.width) * 100;
   const h = (boxPx.height / screenRect.height) * 100;
 
-  // clamp 0..100 (w/h can still be <=100)
   return {
     x: round2(clamp(x, 0, 100)),
     y: round2(clamp(y, 0, 100)),
@@ -49,7 +49,7 @@ function get_hitbox_buttons(screenEl) {
 }
 
 function get_hitbox_id(btn) {
-  return String(btn?.dataset?.hitboxId || btn?.getAttribute?.("data-hitbox-id") || btn?.getAttribute?.("aria-label") || "").trim();
+  return String(btn?.dataset?.hitboxId || btn?.getAttribute?.("aria-label") || "").trim();
 }
 
 function get_hitbox_action(btn) {
@@ -57,7 +57,6 @@ function get_hitbox_action(btn) {
 }
 
 function parse_percent_style(btn) {
-  // Styles are set inline by screen_manager
   const x = parseFloat(btn.style.left || "0");
   const y = parseFloat(btn.style.top || "0");
   const w = parseFloat(btn.style.width || "0");
@@ -74,7 +73,6 @@ function set_btn_percent_style(btn, perc) {
 }
 
 function copy_text(text) {
-  // iOS-friendly fallback
   if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(text).catch(() => {});
     return;
@@ -99,66 +97,68 @@ export function init_debug_toolkit() {
   root.innerHTML = `
     <div class="vc-dbg-header">
       <div class="vc-dbg-title">Debug Toolkit</div>
-      <div class="vc-dbg-sub">Hitbox Calibrator</div>
+      <button type="button" class="vc-dbg-btn" data-cmd="minimize">Min</button>
       <button type="button" class="vc-dbg-btn" data-cmd="toggleDraw">Draw: OFF</button>
       <button type="button" class="vc-dbg-btn" data-cmd="clear">Clear</button>
       <button type="button" class="vc-dbg-btn" data-cmd="refresh">Refresh</button>
+      <div class="vc-dbg-sub">Hitbox Calibrator</div>
     </div>
 
-    <div class="vc-dbg-row">
-      <label class="vc-dbg-label">Active Screen</label>
-      <div class="vc-dbg-pill" data-field="screenId">—</div>
-    </div>
-
-    <div class="vc-dbg-row">
-      <label class="vc-dbg-label">Select Hitbox</label>
-      <select class="vc-dbg-select" data-field="hitboxSelect"></select>
-    </div>
-
-    <div class="vc-dbg-grid">
-      <div class="vc-dbg-cell">
-        <div class="vc-dbg-k">x%</div><div class="vc-dbg-v" data-field="xPerc">—</div>
-      </div>
-      <div class="vc-dbg-cell">
-        <div class="vc-dbg-k">y%</div><div class="vc-dbg-v" data-field="yPerc">—</div>
-      </div>
-      <div class="vc-dbg-cell">
-        <div class="vc-dbg-k">w%</div><div class="vc-dbg-v" data-field="wPerc">—</div>
-      </div>
-      <div class="vc-dbg-cell">
-        <div class="vc-dbg-k">h%</div><div class="vc-dbg-v" data-field="hPerc">—</div>
+    <div class="vc-dbg-body">
+      <div class="vc-dbg-row">
+        <label class="vc-dbg-label">Active Screen</label>
+        <div class="vc-dbg-pill" data-field="screenId">—</div>
       </div>
 
-      <div class="vc-dbg-cell">
-        <div class="vc-dbg-k">x px</div><div class="vc-dbg-v" data-field="xPx">—</div>
+      <div class="vc-dbg-row">
+        <label class="vc-dbg-label">Select Hitbox</label>
+        <select class="vc-dbg-select" data-field="hitboxSelect"></select>
       </div>
-      <div class="vc-dbg-cell">
-        <div class="vc-dbg-k">y px</div><div class="vc-dbg-v" data-field="yPx">—</div>
-      </div>
-      <div class="vc-dbg-cell">
-        <div class="vc-dbg-k">w px</div><div class="vc-dbg-v" data-field="wPx">—</div>
-      </div>
-      <div class="vc-dbg-cell">
-        <div class="vc-dbg-k">h px</div><div class="vc-dbg-v" data-field="hPx">—</div>
-      </div>
-    </div>
 
-    <div class="vc-dbg-actions">
-      <button type="button" class="vc-dbg-btn" data-cmd="previewToSelected">Preview → Selected Hitbox</button>
-      <button type="button" class="vc-dbg-btn" data-cmd="copyJson">Copy JSON</button>
-    </div>
+      <div class="vc-dbg-grid">
+        <div class="vc-dbg-cell">
+          <div class="vc-dbg-k">x%</div><div class="vc-dbg-v" data-field="xPerc">—</div>
+        </div>
+        <div class="vc-dbg-cell">
+          <div class="vc-dbg-k">y%</div><div class="vc-dbg-v" data-field="yPerc">—</div>
+        </div>
+        <div class="vc-dbg-cell">
+          <div class="vc-dbg-k">w%</div><div class="vc-dbg-v" data-field="wPerc">—</div>
+        </div>
+        <div class="vc-dbg-cell">
+          <div class="vc-dbg-k">h%</div><div class="vc-dbg-v" data-field="hPerc">—</div>
+        </div>
 
-    <div class="vc-dbg-note" data-field="note">
-      Tip: Turn Draw ON, drag a rectangle on the screen. Then choose a hitbox and preview-apply.
+        <div class="vc-dbg-cell">
+          <div class="vc-dbg-k">x px</div><div class="vc-dbg-v" data-field="xPx">—</div>
+        </div>
+        <div class="vc-dbg-cell">
+          <div class="vc-dbg-k">y px</div><div class="vc-dbg-v" data-field="yPx">—</div>
+        </div>
+        <div class="vc-dbg-cell">
+          <div class="vc-dbg-k">w px</div><div class="vc-dbg-v" data-field="wPx">—</div>
+        </div>
+        <div class="vc-dbg-cell">
+          <div class="vc-dbg-k">h px</div><div class="vc-dbg-v" data-field="hPx">—</div>
+        </div>
+      </div>
+
+      <div class="vc-dbg-actions">
+        <button type="button" class="vc-dbg-btn" data-cmd="previewToSelected">Preview → Selected</button>
+        <button type="button" class="vc-dbg-btn" data-cmd="copyJson">Copy JSON</button>
+      </div>
+
+      <div class="vc-dbg-note" data-field="note">
+        Tip: Turn Draw ON, drag a rectangle on the screen. Then choose a hitbox and preview-apply.
+      </div>
     </div>
   `;
 
   document.body.appendChild(root);
 
-  // Overlay that sits on top of the active screen for drawing
   const overlay = document.createElement("div");
   overlay.id = "vcDebugOverlay";
-  overlay.className = "vc-debug-overlay"; // pointer-events toggled based on draw mode
+  overlay.className = "vc-debug-overlay";
   document.body.appendChild(overlay);
 
   const drawRect = document.createElement("div");
@@ -177,9 +177,11 @@ export function init_debug_toolkit() {
     wPx: root.querySelector('[data-field="wPx"]'),
     hPx: root.querySelector('[data-field="hPx"]'),
     note: root.querySelector('[data-field="note"]'),
-    toggleDrawBtn: root.querySelector('[data-cmd="toggleDraw"]')
+    toggleDrawBtn: root.querySelector('[data-cmd="toggleDraw"]'),
+    minimizeBtn: root.querySelector('[data-cmd="minimize"]')
   };
 
+  let minimized = false;
   let drawMode = false;
   let activeScreen = null;
   let selectedBtn = null;
@@ -187,25 +189,35 @@ export function init_debug_toolkit() {
   let isDragging = false;
   let startX = 0, startY = 0;
 
-  // Last drawn rect in px relative to viewport
   let lastBoxPx = null;
-  // Last computed perc coords
   let lastPerc = { x: 0, y: 0, w: 0, h: 0 };
+
+  function set_minimized(on) {
+    minimized = !!on;
+    if (minimized) {
+      root.classList.add("is-min");
+      els.minimizeBtn.textContent = "Open";
+    } else {
+      root.classList.remove("is-min");
+      els.minimizeBtn.textContent = "Min";
+    }
+  }
 
   function set_draw_mode(on) {
     drawMode = !!on;
     if (drawMode) {
       overlay.classList.add("is-active");
       els.toggleDrawBtn.textContent = "Draw: ON";
-      els.note.textContent = "Draw is ON: drag on screen to create a calibration box.";
+      if (els.note) els.note.textContent = "Draw is ON: drag on screen to create a calibration box.";
     } else {
       overlay.classList.remove("is-active");
       els.toggleDrawBtn.textContent = "Draw: OFF";
-      els.note.textContent = "Draw is OFF: navigation works normally. Turn Draw ON to calibrate.";
+      if (els.note) els.note.textContent = "Draw is OFF: navigation works normally. Turn Draw ON to calibrate.";
     }
   }
 
   function set_fields_from_perc(perc, boxPx) {
+    if (!els.xPerc) return;
     els.xPerc.textContent = String(perc.x);
     els.yPerc.textContent = String(perc.y);
     els.wPerc.textContent = String(perc.w);
@@ -239,10 +251,7 @@ export function init_debug_toolkit() {
   function refresh_active_screen() {
     activeScreen = get_active_screen_el();
     const id = activeScreen?.getAttribute?.("data-screen") || "—";
-    els.screenId.textContent = id;
-
-    // Place overlay over the active screen (full viewport, but we compute using screen rect)
-    // Overlay stays fixed; we just compute relative to activeScreen bounds.
+    if (els.screenId) els.screenId.textContent = id;
 
     const options = [];
     const btns = get_hitbox_buttons(activeScreen);
@@ -296,26 +305,23 @@ export function init_debug_toolkit() {
     };
 
     copy_text(JSON.stringify(json, null, 2));
-    els.note.textContent = "Copied JSON to clipboard. Paste into the screen’s hitboxes JSON file.";
+    if (els.note) els.note.textContent = "Copied JSON. Paste it into the screen hitboxes JSON file.";
   }
 
-  // Pointer events (draw mode only)
   function on_pointer_down(e) {
     if (!drawMode) return;
     activeScreen = get_active_screen_el();
     if (!activeScreen) return;
 
     const screenRect = activeScreen.getBoundingClientRect();
-
-    // Only start drawing if pointerdown happened inside the active screen bounds
     const px = e.clientX;
     const py = e.clientY;
+
     if (px < screenRect.left || px > screenRect.right || py < screenRect.top || py > screenRect.bottom) return;
 
     isDragging = true;
     startX = px;
     startY = py;
-
     e.preventDefault();
   }
 
@@ -337,10 +343,7 @@ export function init_debug_toolkit() {
     const boxPx = { left, top, width, height };
     lastBoxPx = boxPx;
 
-    lastPerc = rect_to_percent(
-      { left, top, width, height },
-      screenRect
-    );
+    lastPerc = rect_to_percent({ left, top, width, height }, screenRect);
 
     set_draw_rect(boxPx);
     set_fields_from_perc(lastPerc, boxPx);
@@ -351,46 +354,54 @@ export function init_debug_toolkit() {
   function on_pointer_up(e) {
     if (!drawMode) return;
     if (!isDragging) return;
-
     isDragging = false;
     e.preventDefault();
   }
 
-  // UI interactions
   root.addEventListener("click", (e) => {
     const btn = e.target?.closest?.("[data-cmd]");
     if (!btn) return;
 
     const cmd = btn.dataset.cmd;
+
+    if (cmd === "minimize") {
+      set_minimized(!minimized);
+      return;
+    }
+
     if (cmd === "toggleDraw") {
       set_draw_mode(!drawMode);
       return;
     }
+
     if (cmd === "clear") {
       lastBoxPx = null;
       lastPerc = { x: 0, y: 0, w: 0, h: 0 };
       set_draw_rect(null);
       set_fields_from_perc(lastPerc, null);
-      els.note.textContent = "Cleared. Turn Draw ON and drag a new rectangle.";
+      if (els.note) els.note.textContent = "Cleared. Turn Draw ON and drag a new rectangle.";
       return;
     }
+
     if (cmd === "refresh") {
       refresh_active_screen();
-      els.note.textContent = "Refreshed hitbox list for the active screen.";
+      if (els.note) els.note.textContent = "Refreshed hitbox list for the active screen.";
       return;
     }
+
     if (cmd === "previewToSelected") {
       if (!selectedBtn) {
-        els.note.textContent = "Select a hitbox first, then Preview → Selected Hitbox.";
+        if (els.note) els.note.textContent = "Select a hitbox first, then Preview → Selected.";
         return;
       }
       preview_apply_to_selected();
-      els.note.textContent = "Preview applied to selected hitbox (visual only). Copy JSON to persist.";
+      if (els.note) els.note.textContent = "Preview applied (visual only). Use Copy JSON to persist.";
       return;
     }
+
     if (cmd === "copyJson") {
       if (!lastBoxPx) {
-        els.note.textContent = "Draw a rectangle first, then Copy JSON.";
+        if (els.note) els.note.textContent = "Draw a rectangle first, then Copy JSON.";
         return;
       }
       copy_json();
@@ -402,28 +413,25 @@ export function init_debug_toolkit() {
     const hbId = String(els.hitboxSelect.value || "").trim();
     selectedBtn = hbId ? find_btn_by_id(hbId) : null;
 
-    if (selectedBtn) {
+    if (selectedBtn && els.note) {
       const perc = parse_percent_style(selectedBtn);
-      // We keep lastPerc as-is, but we can show current selected values as a reference
-      els.note.textContent = `Selected hitbox "${hbId}". Current: x=${perc.x}, y=${perc.y}, w=${perc.w}, h=${perc.h}. Draw a new box to replace.`;
-    } else {
+      els.note.textContent =
+        `Selected "${hbId}". Current: x=${perc.x}, y=${perc.y}, w=${perc.w}, h=${perc.h}. Draw a new box to replace.`;
+    } else if (els.note) {
       els.note.textContent = "No hitbox selected. Draw a rectangle, then select a hitbox to preview-apply.";
     }
   });
 
-  // Track screen changes
   window.addEventListener("vc:screenchange", () => {
-    // Hitboxes are re-injected after navigation; give it a tick.
     setTimeout(() => refresh_active_screen(), 0);
   });
 
-  // Attach overlay pointer handlers
   overlay.addEventListener("pointerdown", on_pointer_down);
   overlay.addEventListener("pointermove", on_pointer_move);
   overlay.addEventListener("pointerup", on_pointer_up);
   overlay.addEventListener("pointercancel", on_pointer_up);
 
-  // First init
   refresh_active_screen();
   set_draw_mode(false);
+  set_minimized(false);
 }
