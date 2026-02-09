@@ -1,1 +1,3 @@
-keep
+.screen[data-screen="inventory_oregon_trail"] .screen-bg {
+  background-image: url("../../assets/backgrounds/oregon-trail-inventory-panel.webp");
+}
