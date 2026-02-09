@@ -49,3 +49,12 @@
 
   background-image: url("../../assets/buttons/character-button-oregon-trail.webp");
 }
+
+/* =========================================================
+   ADDITIVE OVERRIDES
+   Load per-button positioning files
+   (these override the ::before / ::after positions above)
+   ========================================================= */
+
+@import url("./inventory_rucksack.css");
+@import url("./character_button.css");
