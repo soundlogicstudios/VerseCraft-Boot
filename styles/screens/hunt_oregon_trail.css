@@ -3,8 +3,8 @@
 }
 
 /* =========================================================
-   ✅ ADDITIVE ONLY — BACK TO STORY BUTTON (BOTTOM LEFT)
-   Attached to .screen-bg so it aligns with background art
+   BACK TO STORY BUTTON — CENTER ANCHORED (MATCHES OTHER BUTTONS)
+   Additive only — gameplay layers untouched
    ========================================================= */
 
 .screen[data-screen="hunt_oregon_trail"] .screen-bg::after {
@@ -18,13 +18,15 @@
   background-position: center;
   background-size: contain;
 
-  /* Bottom-left placement */
-  left: 3%;
-  top: 92%;
-  transform: translate(0, -50%);
+  /* 🔥 CENTER POSITION (tweak these in inspector) */
+  left: 18% ;
+  top: 92% ;
 
-  width: clamp(120px, 28vw, 240px);
-  height: clamp(60px, 14vw, 120px);
+  transform: translate(-50%, -50%);
+
+  /* 🔥 SIZE — adjust only these if you want bigger */
+  width: 30%;
+  height: 16%;
 
   filter: drop-shadow(0 10px 18px rgba(0,0,0,0.65));
 }
