@@ -26,12 +26,11 @@
   filter: drop-shadow(0 10px 18px rgba(0,0,0,0.65));
 }
 
-/* ✅ Inventory rucksack (bottom-right) */
+/* ✅ Inventory rucksack (original rule – kept for additive safety) */
 .screen[data-screen="story_oregon_trail"]::before {
   right: 3vw;
   bottom: 5vh;
 
-  /* Bigger + thumb friendly */
   width: clamp(96px, 18vw, 180px);
   height: clamp(96px, 18vw, 180px);
 
@@ -43,7 +42,6 @@
   left: 3vw;
   bottom: 5.2vh;
 
-  /* Wider pill */
   width: clamp(200px, 48vw, 340px);
   height: clamp(64px, 14vw, 110px);
 
@@ -51,16 +49,21 @@
 }
 
 /* =========================================================
-   ADDITIVE OVERRIDES (WORKING)
-   Force the inventory icon to match hitbox rectangle:
-   x=79.47 y=49.14 w=18.4 h=10.99
+   ADDITIVE OVERRIDE
+   Center-anchored inventory icon
+   Matches hitbox center so scaling doesn't drift
    ========================================================= */
 
-.screen[data-screen="story_oregon_trail"]::before {
-  left: 79.47% !important;
-  top: 49.14% !important;
-  width: 24% !important;
-  height: 16% !important;
+.screen.is-active[data-screen="story_oregon_trail"]::before {
+  /* Hitbox center = (88.67%, 54.64%) */
+  left: 88.67% !important;
+  top: 54.64% !important;
+
+  transform: translate(-50%, -50%) !important;
+
+  /* Bigger size — adjust only these if needed */
+  width: 30% !important;
+  height: 30% !important;
 
   right: auto !important;
   bottom: auto !important;
