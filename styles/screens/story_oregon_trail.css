@@ -1,1 +1,3 @@
-keep
+.screen[data-screen="story_oregon_trail"] .screen-bg {
+  background-image: url("../../assets/backgrounds/oregontrail-narrative-panel.webp");
+}
