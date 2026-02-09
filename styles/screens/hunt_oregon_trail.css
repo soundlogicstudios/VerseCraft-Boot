@@ -1,3 +1,30 @@
 .screen[data-screen="hunt_oregon_trail"] .screen-bg {
   background-image: url("../../assets/backgrounds/oregon-trail-hunting-minigame.webp");
 }
+
+/* =========================================================
+   ✅ ADDITIVE ONLY — BACK TO STORY BUTTON (BOTTOM LEFT)
+   Attached to .screen-bg so it aligns with background art
+   ========================================================= */
+
+.screen[data-screen="hunt_oregon_trail"] .screen-bg::after {
+  content: "";
+  position: absolute;
+  z-index: 2;                 /* above background, below UI/hitboxes */
+  pointer-events: none;
+
+  background-image: url("../../assets/buttons/back-to-story-button-oregon-trail.webp");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+
+  /* Bottom-left placement */
+  left: 3%;
+  top: 92%;
+  transform: translate(0, -50%);
+
+  width: clamp(120px, 28vw, 240px);
+  height: clamp(60px, 14vw, 120px);
+
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.65));
+}
