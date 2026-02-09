@@ -1,7 +1,8 @@
 import { createRouter } from "./router.js";
 import { createScreenManager } from "./screen_manager.js";
 import { createInput } from "./input.js";
-
+import { init_hunt_oregon_trail_controller } from "./controllers/hunt_oregon_trail_controller.js";
+init_hunt_oregon_trail_controller();
 function is_debug_enabled() {
   try {
     const params = new URLSearchParams(location.search);
