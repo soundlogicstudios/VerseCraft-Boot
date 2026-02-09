@@ -27,7 +27,7 @@
     "hunt_oregon_trail": {
       "css": "styles/screens/hunt_oregon_trail.css",
       "hitboxes": "content/hitboxes/hunt_oregon_trail.json",
-      "controller": null
+      "controller": "src/core/controllers/hunt_oregon_trail_controller.js"
     },
     "inventory_oregon_trail": {
       "css": "styles/screens/inventory_oregon_trail.css",
