@@ -1,6 +1,6 @@
 // src/overlays/debug_toolkit.js
 // Debug-only hitbox calibration toolkit.
-// Fixes iOS scroll during draw by locking scroll while Draw is ON.
+// ✅ HARD LOCK for iOS: while Draw is ON, prevent ALL scrolling/rubber-band.
 
 function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
 function round2(n) { return Math.round(n * 100) / 100; }
@@ -60,19 +60,14 @@ function copy_text(text) {
   document.body.removeChild(ta);
 }
 
-/* ✅ Scroll lock helpers (iOS safe) */
-let _scrollY = 0;
-function lock_scroll() {
-  _scrollY = window.scrollY || 0;
-  document.body.classList.add("vc-draw-lock");
-  document.body.style.top = `-${_scrollY}px`;
+/* ✅ Global scroll killer (passive:false) */
+function hard_prevent_scroll(e) {
+  e.preventDefault();
 }
-function unlock_scroll() {
-  document.body.classList.remove("vc-draw-lock");
-  const top = document.body.style.top;
-  document.body.style.top = "";
-  const y = top ? -parseInt(top, 10) : _scrollY;
-  window.scrollTo(0, isFinite(y) ? y : 0);
+
+/* ✅ iOS: stop pinch/zoom while drawing */
+function hard_prevent_gesture(e) {
+  e.preventDefault();
 }
 
 export function init_debug_toolkit() {
@@ -171,6 +166,21 @@ export function init_debug_toolkit() {
     }
   }
 
+  function enable_hard_lock() {
+    // prevent any scroll attempts anywhere
+    document.addEventListener("touchmove", hard_prevent_scroll, { passive: false });
+    window.addEventListener("gesturestart", hard_prevent_gesture, { passive: false });
+    window.addEventListener("gesturechange", hard_prevent_gesture, { passive: false });
+    window.addEventListener("gestureend", hard_prevent_gesture, { passive: false });
+  }
+
+  function disable_hard_lock() {
+    document.removeEventListener("touchmove", hard_prevent_scroll);
+    window.removeEventListener("gesturestart", hard_prevent_gesture);
+    window.removeEventListener("gesturechange", hard_prevent_gesture);
+    window.removeEventListener("gestureend", hard_prevent_gesture);
+  }
+
   function set_draw_mode(on) {
     drawMode = !!on;
 
@@ -178,12 +188,12 @@ export function init_debug_toolkit() {
       overlay.classList.add("is-active");
       els.toggleDrawBtn.textContent = "Draw: ON";
       if (els.note) els.note.textContent = "Draw is ON: drag on screen to create a calibration box.";
-      lock_scroll(); // ✅ stop page scrolling while drawing
+      enable_hard_lock(); // ✅ the nuke option
     } else {
       overlay.classList.remove("is-active");
       els.toggleDrawBtn.textContent = "Draw: OFF";
       if (els.note) els.note.textContent = "Draw is OFF: navigation works normally. Turn Draw ON to calibrate.";
-      unlock_scroll();
+      disable_hard_lock();
     }
   }
 
@@ -271,11 +281,11 @@ export function init_debug_toolkit() {
     activeScreen = get_active_screen_el();
     if (!activeScreen) return;
 
-    const screenRect = activeScreen.getBoundingClientRect();
+    const r = activeScreen.getBoundingClientRect();
     const px = e.clientX;
     const py = e.clientY;
 
-    if (px < screenRect.left || px > screenRect.right || py < screenRect.top || py > screenRect.bottom) return;
+    if (px < r.left || px > r.right || py < r.top || py > r.bottom) return;
 
     isDragging = true;
     startX = px;
@@ -288,9 +298,9 @@ export function init_debug_toolkit() {
     activeScreen = get_active_screen_el();
     if (!activeScreen) return;
 
-    const screenRect = activeScreen.getBoundingClientRect();
-    const curX = clamp(e.clientX, screenRect.left, screenRect.right);
-    const curY = clamp(e.clientY, screenRect.top, screenRect.bottom);
+    const r = activeScreen.getBoundingClientRect();
+    const curX = clamp(e.clientX, r.left, r.right);
+    const curY = clamp(e.clientY, r.top, r.bottom);
 
     const left = Math.min(startX, curX);
     const top = Math.min(startY, curY);
@@ -299,7 +309,7 @@ export function init_debug_toolkit() {
 
     const boxPx = { left, top, width, height };
     lastBoxPx = boxPx;
-    lastPerc = rect_to_percent({ left, top, width, height }, screenRect);
+    lastPerc = rect_to_percent(boxPx, r);
 
     set_draw_rect(boxPx);
     set_fields_from_perc(lastPerc, boxPx);
@@ -311,11 +321,6 @@ export function init_debug_toolkit() {
     if (!isDragging) return;
     isDragging = false;
     e.preventDefault();
-  }
-
-  // ✅ critical: prevent iOS scroll while drawing (needs passive:false)
-  function prevent_touch_scroll(e) {
-    if (drawMode) e.preventDefault();
   }
 
   root.addEventListener("click", (e) => {
@@ -370,8 +375,6 @@ export function init_debug_toolkit() {
   overlay.addEventListener("pointermove", on_pointer_move, { passive: false });
   overlay.addEventListener("pointerup", on_pointer_up, { passive: false });
   overlay.addEventListener("pointercancel", on_pointer_up, { passive: false });
-
-  overlay.addEventListener("touchmove", prevent_touch_scroll, { passive: false });
 
   refresh_active_screen();
   set_draw_mode(false);
