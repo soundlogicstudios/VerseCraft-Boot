@@ -19,7 +19,7 @@
 
 .vc-dbg-header {
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
+  grid-template-columns: 1fr auto auto auto auto;
   gap: 6px;
   align-items: center;
   margin-bottom: 8px;
@@ -36,6 +36,10 @@
   font-size: 12px;
   opacity: 0.85;
   margin-top: 2px;
+}
+
+.vc-dbg-body {
+  display: block;
 }
 
 .vc-dbg-row {
@@ -125,6 +129,21 @@
   font-size: 12px;
   opacity: 0.9;
   line-height: 1.25;
+}
+
+/* NEW: minimized mode */
+.vc-debug-toolkit.is-min {
+  width: min(220px, calc(100vw - 20px));
+  padding: 8px;
+}
+
+.vc-debug-toolkit.is-min .vc-dbg-sub,
+.vc-debug-toolkit.is-min .vc-dbg-body {
+  display: none;
+}
+
+.vc-debug-toolkit.is-min .vc-dbg-header {
+  margin-bottom: 0;
 }
 
 /* Overlay for drawing */
