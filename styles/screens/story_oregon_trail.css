@@ -65,7 +65,7 @@
 
 .screen.is-active[data-screen="story_oregon_trail"]::after {
   /* 🔥 Starting center position (adjust in inspector) */
-  left: 80% !important;
+  left: 85% !important;
   top: 82% !important;
 
   transform: translate(-50%, -50%) !important;
