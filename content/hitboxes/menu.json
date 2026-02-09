@@ -1,13 +1,9 @@
 {
-  "hitboxes": [
-    {
-      "id": "menu_to_story",
-      "x": 12,
-      "y": 68,
-      "w": 76,
-      "h": 12,
-      "action": "go:story_oregon_trail",
-      "label": "Start Story"
-    }
-  ]
+  "id": "Start Story",
+  "x": 26.13,
+  "y": 82.89,
+  "w": 48,
+  "h": 5.65,
+  "action": "go:story_oregon_trail",
+  "label": "Start Story"
 }
