@@ -1,11 +1,16 @@
-/* Oregon Trail Story Screen Overlay Buttons
-   Visual art only — hitboxes handle interaction
-*/
+/* styles/screens/story_oregon_trail.css */
+/* Oregon Trail narrative panel background + overlay UI buttons (visual only) */
 
 .screen[data-screen="story_oregon_trail"] {
   position: absolute;
   inset: 0;
   overflow: hidden;
+
+  /* ✅ Force the narrative panel background */
+  background-image: url("../../assets/backgrounds/oregontrail-narrative-panel.webp");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
 }
 
 /* Shared overlay behavior */
@@ -14,37 +19,33 @@
   content: "";
   position: absolute;
   z-index: 5;             /* BELOW hitboxes, ABOVE background */
-  pointer-events: none;   /* Do NOT block clicks */
+  pointer-events: none;   /* don't block clicks */
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   filter: drop-shadow(0 10px 18px rgba(0,0,0,0.65));
 }
 
-/* =========================================================
-   INVENTORY RUCKSACK (BOTTOM RIGHT)
-   ========================================================= */
+/* ✅ Inventory rucksack (bottom-right) */
 .screen[data-screen="story_oregon_trail"]::before {
   right: 3vw;
-  bottom: 2.2vh;
+  bottom: 5vh;
 
-  /* resize safely here */
-  width: min(22vw, 130px);
-  height: min(22vw, 130px);
+  /* Bigger + thumb friendly */
+  width: clamp(96px, 18vw, 180px);
+  height: clamp(96px, 18vw, 180px);
 
   background-image: url("../../assets/buttons/inventory-rucksack-button-oregon-trail.webp");
 }
 
-/* =========================================================
-   CHARACTER BUTTON (BOTTOM LEFT)
-   ========================================================= */
+/* ✅ Character button (bottom-left) */
 .screen[data-screen="story_oregon_trail"]::after {
   left: 3vw;
-  bottom: 3.8vh;
+  bottom: 5.2vh;
 
-  /* resize safely here */
-  width: min(42vw, 260px);
-  height: min(14vw, 90px);
+  /* Wider pill */
+  width: clamp(200px, 48vw, 340px);
+  height: clamp(64px, 14vw, 110px);
 
   background-image: url("../../assets/buttons/character-button-oregon-trail.webp");
 }
