@@ -21,9 +21,9 @@
     {
       "id": "inventory",
       "x": 79.47,
-      "y": 70.8,
-      "w": 17.33,
-      "h": 7.54,
+      "y": 49.14,
+      "w": 18.4,
+      "h": 10.99,
       "action": "go:inventory_oregon_trail",
       "label": "Inventory"
     }
