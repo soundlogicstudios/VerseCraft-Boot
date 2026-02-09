@@ -1,0 +1,79 @@
+:root {
+  --vc-hitbox-outline: rgba(0, 255, 255, 0.9);
+  --vc-screen-outline: rgba(255, 0, 255, 0.8);
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #000;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.app-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+  overflow: hidden;
+}
+
+.screen.is-active {
+  display: block;
+}
+
+/* Background layer */
+.screen-bg {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+/* Runtime layer (for story text, minigame objects later) */
+.screen-runtime {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* runtime content will re-enable as needed later */
+}
+
+/* Hitboxes live here */
+.hitbox-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+}
+
+/* Hitbox buttons are invisible by default */
+.vc-hitbox {
+  position: absolute;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Debug mode */
+body.debug .screen.is-active {
+  outline: 2px solid var(--vc-screen-outline);
+  outline-offset: -2px;
+}
+
+body.debug .vc-hitbox {
+  outline: 2px solid var(--vc-hitbox-outline);
+  background: rgba(0, 255, 255, 0.08);
+}
