@@ -60,20 +60,33 @@
 
 /* =========================================================
    CHARACTER BUTTON — NEW CENTER ANCHORED CONTROL
-   (MOVE + RESIZE SAFELY HERE)
    ========================================================= */
 
 .screen.is-active[data-screen="story_oregon_trail"]::after {
-  /* 🔥 Starting center position (adjust in inspector) */
   left: 88.5% !important;
   top: 68.5% !important;
-
   transform: translate(-50%, -50%) !important;
-
-  /* 🔥 Bigger size — change ONLY these numbers */
   width: 48% !important;
   height: 18% !important;
-
   right: auto !important;
   bottom: auto !important;
+}
+
+/* =========================================================
+   ✅ ADDITIVE ONLY — BACK TO LIBRARY BUTTON (TOP LEFT)
+   Does NOT affect your existing buttons or positioning.
+   ========================================================= */
+
+.screen.is-active[data-screen="story_oregon_trail"] {
+  background-image:
+    url("../../assets/backgrounds/oregontrail-narrative-panel.webp"),
+    url("../../assets/buttons/back-to-library-button-oregon-trail.webp");
+
+  background-repeat: no-repeat, no-repeat;
+
+  /* panel center, button top-left */
+  background-position: center, 3% 3%;
+
+  /* panel full, button sized */
+  background-size: cover, clamp(90px, 18vw, 160px);
 }
