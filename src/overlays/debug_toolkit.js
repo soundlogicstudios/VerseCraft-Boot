@@ -1,6 +1,6 @@
 // src/overlays/debug_toolkit.js
 // Debug-only hitbox calibration toolkit.
-// ✅ HARD LOCK for iOS: while Draw is ON, prevent ALL scrolling/rubber-band.
+// Adds a bottom-right toggle to completely hide/show HUD so you can draw in top-left.
 
 function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
 function round2(n) { return Math.round(n * 100) / 100; }
@@ -60,17 +60,12 @@ function copy_text(text) {
   document.body.removeChild(ta);
 }
 
-/* ✅ Global scroll killer (passive:false) */
-function hard_prevent_scroll(e) {
-  e.preventDefault();
-}
-
-/* ✅ iOS: stop pinch/zoom while drawing */
-function hard_prevent_gesture(e) {
-  e.preventDefault();
-}
+/* Global scroll killer while drawing */
+function hard_prevent_scroll(e) { e.preventDefault(); }
+function hard_prevent_gesture(e) { e.preventDefault(); }
 
 export function init_debug_toolkit() {
+  // Main HUD panel
   const root = document.createElement("div");
   root.id = "vcDebugToolkit";
   root.className = "vc-debug-toolkit";
@@ -119,6 +114,14 @@ export function init_debug_toolkit() {
   `;
   document.body.appendChild(root);
 
+  // Bottom-right always-available show/hide toggle
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "vc-debug-toggle";
+  toggle.textContent = "Hide HUD";
+  document.body.appendChild(toggle);
+
+  // Drawing overlay
   const overlay = document.createElement("div");
   overlay.id = "vcDebugOverlay";
   overlay.className = "vc-debug-overlay";
@@ -145,6 +148,7 @@ export function init_debug_toolkit() {
   };
 
   let minimized = false;
+  let hudHidden = false;
   let drawMode = false;
   let activeScreen = null;
   let selectedBtn = null;
@@ -166,8 +170,18 @@ export function init_debug_toolkit() {
     }
   }
 
+  function set_hud_hidden(on) {
+    hudHidden = !!on;
+    if (hudHidden) {
+      root.classList.add("is-hidden");
+      toggle.textContent = "Show HUD";
+    } else {
+      root.classList.remove("is-hidden");
+      toggle.textContent = "Hide HUD";
+    }
+  }
+
   function enable_hard_lock() {
-    // prevent any scroll attempts anywhere
     document.addEventListener("touchmove", hard_prevent_scroll, { passive: false });
     window.addEventListener("gesturestart", hard_prevent_gesture, { passive: false });
     window.addEventListener("gesturechange", hard_prevent_gesture, { passive: false });
@@ -188,7 +202,7 @@ export function init_debug_toolkit() {
       overlay.classList.add("is-active");
       els.toggleDrawBtn.textContent = "Draw: ON";
       if (els.note) els.note.textContent = "Draw is ON: drag on screen to create a calibration box.";
-      enable_hard_lock(); // ✅ the nuke option
+      enable_hard_lock();
     } else {
       overlay.classList.remove("is-active");
       els.toggleDrawBtn.textContent = "Draw: OFF";
@@ -323,6 +337,11 @@ export function init_debug_toolkit() {
     e.preventDefault();
   }
 
+  // Bottom-right toggle: hide/show HUD panel only
+  toggle.addEventListener("click", () => {
+    set_hud_hidden(!hudHidden);
+  });
+
   root.addEventListener("click", (e) => {
     const btn = e.target?.closest?.("[data-cmd]");
     if (!btn) return;
@@ -379,4 +398,5 @@ export function init_debug_toolkit() {
   refresh_active_screen();
   set_draw_mode(false);
   set_minimized(false);
+  set_hud_hidden(false);
 }
