@@ -1,3 +1,50 @@
-.screen[data-screen="story_oregon_trail"] .screen-bg {
-  background-image: url("../../assets/backgrounds/oregontrail-narrative-panel.webp");
+/* Oregon Trail Story Screen Overlay Buttons
+   Visual art only — hitboxes handle interaction
+*/
+
+.screen[data-screen="story_oregon_trail"] {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Shared overlay behavior */
+.screen[data-screen="story_oregon_trail"]::before,
+.screen[data-screen="story_oregon_trail"]::after {
+  content: "";
+  position: absolute;
+  z-index: 5;             /* BELOW hitboxes, ABOVE background */
+  pointer-events: none;   /* Do NOT block clicks */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.65));
+}
+
+/* =========================================================
+   INVENTORY RUCKSACK (BOTTOM RIGHT)
+   ========================================================= */
+.screen[data-screen="story_oregon_trail"]::before {
+  right: 3vw;
+  bottom: 2.2vh;
+
+  /* resize safely here */
+  width: min(22vw, 130px);
+  height: min(22vw, 130px);
+
+  background-image: url("../../assets/buttons/inventory-rucksack-button-oregon-trail.webp");
+}
+
+/* =========================================================
+   CHARACTER BUTTON (BOTTOM LEFT)
+   ========================================================= */
+.screen[data-screen="story_oregon_trail"]::after {
+  left: 3vw;
+  bottom: 3.8vh;
+
+  /* resize safely here */
+  width: min(42vw, 260px);
+  height: min(14vw, 90px);
+
+  background-image: url("../../assets/buttons/character-button-oregon-trail.webp");
 }
