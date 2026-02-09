@@ -1,27 +1,15 @@
 // src/overlays/debug_toolkit.js
 // Debug-only hitbox calibration toolkit.
-// Shows only when ?debug=1 (bootstrap controls that).
-//
-// Features:
-// - Draw rectangle on active screen (percent + px readout)
-// - Select an existing hitbox and preview-adjust it
-// - Copy JSON snippet for hitbox config (x,y,w,h in percents)
-// - NEW: Minimize/Restore so it doesn't cover the screen
+// Fixes iOS scroll during draw by locking scroll while Draw is ON.
 
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
-}
-
-function round2(n) {
-  return Math.round(n * 100) / 100;
-}
+function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+function round2(n) { return Math.round(n * 100) / 100; }
 
 function rect_to_percent(boxPx, screenRect) {
   const x = ((boxPx.left - screenRect.left) / screenRect.width) * 100;
   const y = ((boxPx.top - screenRect.top) / screenRect.height) * 100;
   const w = (boxPx.width / screenRect.width) * 100;
   const h = (boxPx.height / screenRect.height) * 100;
-
   return {
     x: round2(clamp(x, 0, 100)),
     y: round2(clamp(y, 0, 100)),
@@ -31,30 +19,13 @@ function rect_to_percent(boxPx, screenRect) {
 }
 
 function percent_to_style({ x, y, w, h }) {
-  return {
-    left: `${x}%`,
-    top: `${y}%`,
-    width: `${w}%`,
-    height: `${h}%`
-  };
+  return { left: `${x}%`, top: `${y}%`, width: `${w}%`, height: `${h}%` };
 }
 
-function get_active_screen_el() {
-  return document.querySelector(".screen.is-active");
-}
-
-function get_hitbox_buttons(screenEl) {
-  if (!screenEl) return [];
-  return Array.from(screenEl.querySelectorAll(".vc-hitbox"));
-}
-
-function get_hitbox_id(btn) {
-  return String(btn?.dataset?.hitboxId || btn?.getAttribute?.("aria-label") || "").trim();
-}
-
-function get_hitbox_action(btn) {
-  return String(btn?.dataset?.action || "").trim();
-}
+function get_active_screen_el() { return document.querySelector(".screen.is-active"); }
+function get_hitbox_buttons(screenEl) { return screenEl ? Array.from(screenEl.querySelectorAll(".vc-hitbox")) : []; }
+function get_hitbox_id(btn) { return String(btn?.dataset?.hitboxId || btn?.getAttribute?.("aria-label") || "").trim(); }
+function get_hitbox_action(btn) { return String(btn?.dataset?.action || "").trim(); }
 
 function parse_percent_style(btn) {
   const x = parseFloat(btn.style.left || "0");
@@ -77,7 +48,6 @@ function copy_text(text) {
     navigator.clipboard.writeText(text).catch(() => {});
     return;
   }
-
   const ta = document.createElement("textarea");
   ta.value = text;
   ta.setAttribute("readonly", "");
@@ -88,6 +58,21 @@ function copy_text(text) {
   ta.select();
   try { document.execCommand("copy"); } catch (_) {}
   document.body.removeChild(ta);
+}
+
+/* ✅ Scroll lock helpers (iOS safe) */
+let _scrollY = 0;
+function lock_scroll() {
+  _scrollY = window.scrollY || 0;
+  document.body.classList.add("vc-draw-lock");
+  document.body.style.top = `-${_scrollY}px`;
+}
+function unlock_scroll() {
+  document.body.classList.remove("vc-draw-lock");
+  const top = document.body.style.top;
+  document.body.style.top = "";
+  const y = top ? -parseInt(top, 10) : _scrollY;
+  window.scrollTo(0, isFinite(y) ? y : 0);
 }
 
 export function init_debug_toolkit() {
@@ -116,31 +101,15 @@ export function init_debug_toolkit() {
       </div>
 
       <div class="vc-dbg-grid">
-        <div class="vc-dbg-cell">
-          <div class="vc-dbg-k">x%</div><div class="vc-dbg-v" data-field="xPerc">—</div>
-        </div>
-        <div class="vc-dbg-cell">
-          <div class="vc-dbg-k">y%</div><div class="vc-dbg-v" data-field="yPerc">—</div>
-        </div>
-        <div class="vc-dbg-cell">
-          <div class="vc-dbg-k">w%</div><div class="vc-dbg-v" data-field="wPerc">—</div>
-        </div>
-        <div class="vc-dbg-cell">
-          <div class="vc-dbg-k">h%</div><div class="vc-dbg-v" data-field="hPerc">—</div>
-        </div>
+        <div class="vc-dbg-cell"><div class="vc-dbg-k">x%</div><div class="vc-dbg-v" data-field="xPerc">—</div></div>
+        <div class="vc-dbg-cell"><div class="vc-dbg-k">y%</div><div class="vc-dbg-v" data-field="yPerc">—</div></div>
+        <div class="vc-dbg-cell"><div class="vc-dbg-k">w%</div><div class="vc-dbg-v" data-field="wPerc">—</div></div>
+        <div class="vc-dbg-cell"><div class="vc-dbg-k">h%</div><div class="vc-dbg-v" data-field="hPerc">—</div></div>
 
-        <div class="vc-dbg-cell">
-          <div class="vc-dbg-k">x px</div><div class="vc-dbg-v" data-field="xPx">—</div>
-        </div>
-        <div class="vc-dbg-cell">
-          <div class="vc-dbg-k">y px</div><div class="vc-dbg-v" data-field="yPx">—</div>
-        </div>
-        <div class="vc-dbg-cell">
-          <div class="vc-dbg-k">w px</div><div class="vc-dbg-v" data-field="wPx">—</div>
-        </div>
-        <div class="vc-dbg-cell">
-          <div class="vc-dbg-k">h px</div><div class="vc-dbg-v" data-field="hPx">—</div>
-        </div>
+        <div class="vc-dbg-cell"><div class="vc-dbg-k">x px</div><div class="vc-dbg-v" data-field="xPx">—</div></div>
+        <div class="vc-dbg-cell"><div class="vc-dbg-k">y px</div><div class="vc-dbg-v" data-field="yPx">—</div></div>
+        <div class="vc-dbg-cell"><div class="vc-dbg-k">w px</div><div class="vc-dbg-v" data-field="wPx">—</div></div>
+        <div class="vc-dbg-cell"><div class="vc-dbg-k">h px</div><div class="vc-dbg-v" data-field="hPx">—</div></div>
       </div>
 
       <div class="vc-dbg-actions">
@@ -153,7 +122,6 @@ export function init_debug_toolkit() {
       </div>
     </div>
   `;
-
   document.body.appendChild(root);
 
   const overlay = document.createElement("div");
@@ -205,19 +173,21 @@ export function init_debug_toolkit() {
 
   function set_draw_mode(on) {
     drawMode = !!on;
+
     if (drawMode) {
       overlay.classList.add("is-active");
       els.toggleDrawBtn.textContent = "Draw: ON";
       if (els.note) els.note.textContent = "Draw is ON: drag on screen to create a calibration box.";
+      lock_scroll(); // ✅ stop page scrolling while drawing
     } else {
       overlay.classList.remove("is-active");
       els.toggleDrawBtn.textContent = "Draw: OFF";
       if (els.note) els.note.textContent = "Draw is OFF: navigation works normally. Turn Draw ON to calibrate.";
+      unlock_scroll();
     }
   }
 
   function set_fields_from_perc(perc, boxPx) {
-    if (!els.xPerc) return;
     els.xPerc.textContent = String(perc.x);
     els.yPerc.textContent = String(perc.y);
     els.wPerc.textContent = String(perc.w);
@@ -237,10 +207,7 @@ export function init_debug_toolkit() {
   }
 
   function set_draw_rect(boxPx) {
-    if (!boxPx) {
-      drawRect.style.display = "none";
-      return;
-    }
+    if (!boxPx) { drawRect.style.display = "none"; return; }
     drawRect.style.display = "block";
     drawRect.style.left = `${boxPx.left}px`;
     drawRect.style.top = `${boxPx.top}px`;
@@ -251,7 +218,7 @@ export function init_debug_toolkit() {
   function refresh_active_screen() {
     activeScreen = get_active_screen_el();
     const id = activeScreen?.getAttribute?.("data-screen") || "—";
-    if (els.screenId) els.screenId.textContent = id;
+    els.screenId.textContent = id;
 
     const options = [];
     const btns = get_hitbox_buttons(activeScreen);
@@ -294,16 +261,7 @@ export function init_debug_toolkit() {
     const action = get_hitbox_action(selectedBtn) || "go:TARGET_SCREEN";
     const label = selectedBtn?.getAttribute?.("aria-label") || hbId;
 
-    const json = {
-      id: hbId,
-      x: lastPerc.x,
-      y: lastPerc.y,
-      w: lastPerc.w,
-      h: lastPerc.h,
-      action,
-      label
-    };
-
+    const json = { id: hbId, x: lastPerc.x, y: lastPerc.y, w: lastPerc.w, h: lastPerc.h, action, label };
     copy_text(JSON.stringify(json, null, 2));
     if (els.note) els.note.textContent = "Copied JSON. Paste it into the screen hitboxes JSON file.";
   }
@@ -331,7 +289,6 @@ export function init_debug_toolkit() {
     if (!activeScreen) return;
 
     const screenRect = activeScreen.getBoundingClientRect();
-
     const curX = clamp(e.clientX, screenRect.left, screenRect.right);
     const curY = clamp(e.clientY, screenRect.top, screenRect.bottom);
 
@@ -342,12 +299,10 @@ export function init_debug_toolkit() {
 
     const boxPx = { left, top, width, height };
     lastBoxPx = boxPx;
-
     lastPerc = rect_to_percent({ left, top, width, height }, screenRect);
 
     set_draw_rect(boxPx);
     set_fields_from_perc(lastPerc, boxPx);
-
     e.preventDefault();
   }
 
@@ -358,21 +313,19 @@ export function init_debug_toolkit() {
     e.preventDefault();
   }
 
+  // ✅ critical: prevent iOS scroll while drawing (needs passive:false)
+  function prevent_touch_scroll(e) {
+    if (drawMode) e.preventDefault();
+  }
+
   root.addEventListener("click", (e) => {
     const btn = e.target?.closest?.("[data-cmd]");
     if (!btn) return;
 
     const cmd = btn.dataset.cmd;
 
-    if (cmd === "minimize") {
-      set_minimized(!minimized);
-      return;
-    }
-
-    if (cmd === "toggleDraw") {
-      set_draw_mode(!drawMode);
-      return;
-    }
+    if (cmd === "minimize") { set_minimized(!minimized); return; }
+    if (cmd === "toggleDraw") { set_draw_mode(!drawMode); return; }
 
     if (cmd === "clear") {
       lastBoxPx = null;
@@ -383,27 +336,17 @@ export function init_debug_toolkit() {
       return;
     }
 
-    if (cmd === "refresh") {
-      refresh_active_screen();
-      if (els.note) els.note.textContent = "Refreshed hitbox list for the active screen.";
-      return;
-    }
+    if (cmd === "refresh") { refresh_active_screen(); if (els.note) els.note.textContent = "Refreshed."; return; }
 
     if (cmd === "previewToSelected") {
-      if (!selectedBtn) {
-        if (els.note) els.note.textContent = "Select a hitbox first, then Preview → Selected.";
-        return;
-      }
+      if (!selectedBtn) { if (els.note) els.note.textContent = "Select a hitbox first."; return; }
       preview_apply_to_selected();
-      if (els.note) els.note.textContent = "Preview applied (visual only). Use Copy JSON to persist.";
+      if (els.note) els.note.textContent = "Preview applied (visual only). Copy JSON to persist.";
       return;
     }
 
     if (cmd === "copyJson") {
-      if (!lastBoxPx) {
-        if (els.note) els.note.textContent = "Draw a rectangle first, then Copy JSON.";
-        return;
-      }
+      if (!lastBoxPx) { if (els.note) els.note.textContent = "Draw a rectangle first."; return; }
       copy_json();
       return;
     }
@@ -415,21 +358,20 @@ export function init_debug_toolkit() {
 
     if (selectedBtn && els.note) {
       const perc = parse_percent_style(selectedBtn);
-      els.note.textContent =
-        `Selected "${hbId}". Current: x=${perc.x}, y=${perc.y}, w=${perc.w}, h=${perc.h}. Draw a new box to replace.`;
+      els.note.textContent = `Selected "${hbId}". Current: x=${perc.x}, y=${perc.y}, w=${perc.w}, h=${perc.h}. Draw a new box to replace.`;
     } else if (els.note) {
       els.note.textContent = "No hitbox selected. Draw a rectangle, then select a hitbox to preview-apply.";
     }
   });
 
-  window.addEventListener("vc:screenchange", () => {
-    setTimeout(() => refresh_active_screen(), 0);
-  });
+  window.addEventListener("vc:screenchange", () => setTimeout(() => refresh_active_screen(), 0));
 
-  overlay.addEventListener("pointerdown", on_pointer_down);
-  overlay.addEventListener("pointermove", on_pointer_move);
-  overlay.addEventListener("pointerup", on_pointer_up);
-  overlay.addEventListener("pointercancel", on_pointer_up);
+  overlay.addEventListener("pointerdown", on_pointer_down, { passive: false });
+  overlay.addEventListener("pointermove", on_pointer_move, { passive: false });
+  overlay.addEventListener("pointerup", on_pointer_up, { passive: false });
+  overlay.addEventListener("pointercancel", on_pointer_up, { passive: false });
+
+  overlay.addEventListener("touchmove", prevent_touch_scroll, { passive: false });
 
   refresh_active_screen();
   set_draw_mode(false);
