@@ -51,10 +51,17 @@
 }
 
 /* =========================================================
-   ADDITIVE OVERRIDES
-   Load per-button positioning files
-   (these override the ::before / ::after positions above)
+   ADDITIVE OVERRIDES (WORKING)
+   Force the inventory icon to match hitbox rectangle:
+   x=79.47 y=49.14 w=18.4 h=10.99
    ========================================================= */
 
-@import url("./inventory_rucksack.css");
-@import url("./character_button.css");
+.screen[data-screen="story_oregon_trail"]::before {
+  left: 79.47% !important;
+  top: 49.14% !important;
+  width: 18.4% !important;
+  height: 10.99% !important;
+
+  right: auto !important;
+  bottom: auto !important;
+}
