@@ -1,3 +1,5 @@
+console.log("BOOTSTRAP LIVE: v_boot_999");
+window.__BOOT_VER = "v_boot_999";
 import { createRouter } from "./router.js";
 import { createScreenManager } from "./screen_manager.js";
 import { createInput } from "./input.js";
