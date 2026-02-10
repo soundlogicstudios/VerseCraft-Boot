@@ -1,21 +1,15 @@
-// src/core/bootstrap.js
-// Boot-stable bootstrap with "no-black-screen" watchdog.
-
-window.__BOOT_VER = "v_boot_watchdog_001";
-console.log("BOOT", window.__BOOT_VER);
-
 import { createRouter } from "./router.js";
 import { createScreenManager } from "./screen_manager.js";
 import { createInput } from "./input.js";
-
-function install_global_error_traps() {
-  window.addEventListener("error", (e) => {
-    console.error("[GLOBAL ERROR]", e?.message || e, e?.filename, e?.lineno, e?.colno);
-  });
-
-  window.addEventListener("unhandledrejection", (e) => {
-    console.error("[UNHANDLED REJECTION]", e?.reason || e);
-  });
+import { init_hunt_oregon_trail_controller } from "./controllers/hunt_oregon_trail_controller.js";
+init_hunt_oregon_trail_controller();
+function is_debug_enabled() {
+  try {
+    const params = new URLSearchParams(location.search);
+    return params.get("debug") === "1";
+  } catch (_) {
+    return false;
+  }
 }
 
 async function load_registry() {
@@ -24,63 +18,38 @@ async function load_registry() {
   return await res.json();
 }
 
-function force_visible_screen_fallback() {
-  const screens = Array.from(document.querySelectorAll(".screen"));
-  if (!screens.length) return;
-
-  // If anything is active, we’re good.
-  const active = document.querySelector(".screen.is-active");
-  if (active) return;
-
-  // Otherwise: force menu (or the first screen) visible.
-  const menu = document.querySelector('.screen[data-screen="menu"]');
-  const pick = menu || screens[0];
-
-  screens.forEach(s => s.classList.remove("is-active"));
-  pick.classList.add("is-active");
-
-  console.warn("[WATCHDOG] No active screen found. Forced:", pick.getAttribute("data-screen"));
-}
-
 async function main() {
-  install_global_error_traps();
-
-  const appRoot = document.getElementById("appRoot");
-  if (!appRoot) throw new Error("Missing #appRoot element in index.html");
+  const debug = is_debug_enabled();
+  if (debug) document.body.classList.add("debug");
 
   const registry = await load_registry();
-  console.log("[BOOT] registry.start_screen =", registry?.start_screen);
 
   const screenManager = createScreenManager({
     registry,
-    rootEl: appRoot
+    rootEl: document.getElementById("appRoot")
   });
 
   const router = createRouter({ screenManager, registry });
 
-  createInput({ rootEl: appRoot, router });
+  createInput({ rootEl: document.getElementById("appRoot"), router });
 
-  // Start screen
-  const start = registry.start_screen || "menu";
-  router.go(start);
+  // Debug-only toolkit (loads its own CSS)
+  if (debug) {
+    // Load toolkit CSS (only in debug)
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "styles/debug_toolkit.css";
+    document.head.appendChild(link);
 
-  // WATCHDOG: if anything ever wipes .is-active, we recover immediately.
-  setInterval(force_visible_screen_fallback, 400);
+    const mod = await import("../overlays/debug_toolkit.js");
+    mod.init_debug_toolkit();
+  }
 
-  // iOS/Safari lifecycle recovery
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) {
-      // When returning to the tab, ensure something is visible.
-      force_visible_screen_fallback();
-    }
-  });
-
-  window.addEventListener("pageshow", () => {
-    // On back-forward cache restores, re-assert visibility.
-    force_visible_screen_fallback();
-  });
+  // Initial screen
+  router.go(registry.start_screen || "menu");
 }
 
 main().catch((err) => {
-  console.error("[BOOT] Fatal:", err);
+  console.error("[BOOT] Fatal error:", err);
+  alert("Boot error. Open console to see details.");
 });
