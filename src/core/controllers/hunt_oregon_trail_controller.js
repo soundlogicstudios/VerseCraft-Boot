@@ -1,5 +1,7 @@
 // src/core/controllers/hunt_oregon_trail_controller.js
-import { TargetRunner } from "../games/target_runner.js";
+
+// 🔥 CACHE-BUST so iOS/GitHub Pages cannot serve an old module
+import { TargetRunner } from "../games/target_runner.js?v=boot_001";
 
 let runner = null;
 
@@ -8,6 +10,7 @@ function getActiveScreen() {
 }
 
 function ensureTargetsLayer(screenEl) {
+  // Prefer existing layer if you have it.
   const existing = screenEl.querySelector(".layer-targets");
   if (existing) return existing;
 
@@ -30,21 +33,25 @@ function start() {
   runner = new TargetRunner({
     rootEl: screenEl,
     targetsLayerEl: targetsLayer,
-    assets: {
-      squirrel_right: "assets/targets/squirrel_right.webp",
-      squirrel_left: "assets/targets/squirrel_left.webp"
-    },
-    onScore: (delta) => {
-      console.log("[hunt] score +", delta);
-    },
-    onMiss: () => {
-      console.log("[hunt] miss");
-    }
+    onScore: (delta) => console.log("[hunt] score +", delta),
+    onMiss: () => console.log("[hunt] miss")
   });
 
-  runner.setMaxTargets(3);
-  runner.setSpawnRate(950);
+  // ✅ TOLERANT CALLS: do not crash if older runner is still loaded
+  if (typeof runner.setMaxTargets === "function") {
+    runner.setMaxTargets(1);
+  }
+  if (typeof runner.setSpawnRate === "function") {
+    runner.setSpawnRate(950);
+  }
+
   runner.start();
+
+  // Debug proof this file is actually live:
+  console.log("[hunt] controller started; TargetRunner methods:", {
+    setMaxTargets: typeof runner.setMaxTargets,
+    setSpawnRate: typeof runner.setSpawnRate
+  });
 }
 
 function stop() {
