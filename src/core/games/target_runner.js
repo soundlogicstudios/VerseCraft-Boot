@@ -1,251 +1,290 @@
-// src/games/target_runner.js
-// Additive: lightweight runner for moving targets in a hunt screen.
-// No external dependencies. Cleans up fully on stop().
+// src/core/games/target_runner.js
+// Additive: single-target spawner with rarity + conditional "bear attack" target.
+// - Only ONE target at a time (hard-locked)
+// - Spawn always off-screen
+// - Direction-based facing swap
+// - Bear miss triggers next spawn = special attack target
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
-function now() {
-  return performance && performance.now ? performance.now() : Date.now();
+function tnow() {
+  return (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+}
+
+function pickWeighted(items) {
+  // items: [{ key, w }]
+  let total = 0;
+  for (const it of items) total += it.w;
+  let r = Math.random() * total;
+  for (const it of items) {
+    r -= it.w;
+    if (r <= 0) return it.key;
+  }
+  return items[items.length - 1].key;
 }
 
 export class TargetRunner {
-  /**
-   * @param {Object} opts
-   * @param {HTMLElement} opts.rootEl - The hunt screen element (screen[data-screen="hunt_oregon_trail"])
-   * @param {HTMLElement} [opts.targetsLayerEl] - Optional layer to append targets into
-   * @param {Function} [opts.onScore] - callback(delta) when a target is hit
-   * @param {Function} [opts.onMiss] - callback() when a target escapes
-   * @param {Object} [opts.assets] - sprite urls for targets
-   */
-  constructor(opts) {
-    this.rootEl = opts.rootEl;
-    this.targetsLayerEl = opts.targetsLayerEl || null;
+  constructor({ rootEl, targetsLayerEl, assets, onScore, onMiss } = {}) {
+    this.rootEl = rootEl;
+    this.targetsLayerEl = targetsLayerEl || null;
 
-    this.onScore = typeof opts.onScore === "function" ? opts.onScore : null;
-    this.onMiss = typeof opts.onMiss === "function" ? opts.onMiss : null;
-
-    this.assets = opts.assets || {
+    // Controller can override these paths; otherwise defaults match your filenames.
+    this.assets = {
       squirrel_right: "assets/targets/squirrel-right-facing.webp",
-      squirrel_left: "assets/targets/squirrel-left-facing.webp"
+      squirrel_left: "assets/targets/squirrel-left-facing.webp",
+
+      rabbit_right: "assets/targets/rabbit-right-facing.webp",
+      rabbit_left: "assets/targets/rabbit-left-facing.webp",
+
+      deer_right: "assets/targets/deer-right-facing.webp",
+      deer_left: "assets/targets/deer-left-facing.webp",
+
+      bear_right: "assets/targets/bear-right-facing.webp",
+      bear_left: "assets/targets/bear-left-facing.webp",
+
+      bear_attack: "assets/targets/bear-attack-target.webp",
+
+      ...(assets || {})
     };
+
+    this.onScore = typeof onScore === "function" ? onScore : null;
+    this.onMiss = typeof onMiss === "function" ? onMiss : null;
 
     this._running = false;
     this._raf = 0;
-    this._lastT = 0;
+    this._last = 0;
 
-    this._spawnTimer = 0;
-    this._spawnEveryMs = 950; // tune later
+    this._spawnEvery = 950;
+    this._spawnT = 0;
+
+    // HARD-LOCK: only one target at a time
+    this._maxTargets = 1;
+
     this._targets = [];
-    this._maxTargets = 3;
 
-    this._screenRect = null;
-    this._resizeObs = null;
-
-    this._container = null;
+    // If you miss a bear, the NEXT spawn becomes the special attack target
+    this._pendingBearAttack = false;
   }
 
   start() {
     if (this._running) return;
+    if (!this.rootEl) return;
+
     this._running = true;
+    this._last = tnow();
 
-    // Ensure a targets layer exists (additive).
-    this._container = this.targetsLayerEl || this._ensureTargetsLayer();
+    if (!this.targetsLayerEl) this.targetsLayerEl = this._ensureLayer();
 
-    // Cache bounds, keep updated.
-    this._screenRect = this.rootEl.getBoundingClientRect();
-    this._installResizeObserver();
-
-    this._lastT = now();
     this._loop();
   }
 
   stop() {
-    if (!this._running) return;
     this._running = false;
-
     if (this._raf) cancelAnimationFrame(this._raf);
     this._raf = 0;
 
-    this._uninstallResizeObserver();
-
-    // Remove any spawned targets (DOM cleanup).
     for (const t of this._targets) {
-      if (t && t.el && t.el.parentNode) t.el.parentNode.removeChild(t.el);
+      try { t.el?.remove(); } catch (_) {}
     }
     this._targets = [];
-
-    // Do not remove container if it existed already (safe).
-    // If we created it, we can remove it to prevent leakage.
-    if (this._container && this._container.dataset && this._container.dataset.vcCreated === "1") {
-      if (this._container.parentNode) this._container.parentNode.removeChild(this._container);
-    }
-    this._container = null;
   }
 
   setSpawnRate(ms) {
-    this._spawnEveryMs = clamp(Number(ms || 0), 200, 5000);
+    this._spawnEvery = clamp(Number(ms || 950), 200, 5000);
   }
 
-  setMaxTargets(n) {
-    this._maxTargets = clamp(Number(n || 0), 1, 10);
+  // Kept for API compatibility, but we hard-lock to 1
+  setMaxTargets(_n) {
+    this._maxTargets = 1;
   }
 
-  _ensureTargetsLayer() {
-    // Preferred: find an existing .layer-targets inside the active hunt screen.
+  _ensureLayer() {
     let layer = this.rootEl.querySelector(".layer-targets");
     if (!layer) {
       layer = document.createElement("div");
       layer.className = "layer layer-targets";
-      layer.dataset.vcCreated = "1";
-      // Put it above bg, below UI if present.
-      // If your engine has ordering, append near the end but before hitboxes layer.
+      layer.style.position = "absolute";
+      layer.style.inset = "0";
+      layer.style.pointerEvents = "none";
       this.rootEl.appendChild(layer);
     }
-    // Ensure it can position absolute children
-    layer.style.position = layer.style.position || "absolute";
-    layer.style.inset = layer.style.inset || "0";
-    layer.style.pointerEvents = "none"; // targets themselves will re-enable
     return layer;
-  }
-
-  _installResizeObserver() {
-    try {
-      this._resizeObs = new ResizeObserver(() => {
-        this._screenRect = this.rootEl.getBoundingClientRect();
-      });
-      this._resizeObs.observe(this.rootEl);
-    } catch (_) {
-      this._resizeObs = null;
-      // Fallback: update bounds occasionally in loop
-    }
-  }
-
-  _uninstallResizeObserver() {
-    try {
-      if (this._resizeObs) this._resizeObs.disconnect();
-    } catch (_) {}
-    this._resizeObs = null;
   }
 
   _loop() {
     if (!this._running) return;
 
-    const t = now();
-    const dt = Math.min(0.05, (t - this._lastT) / 1000); // cap dt to avoid jumps
-    this._lastT = t;
+    const t = tnow();
+    const dt = Math.min(0.05, (t - this._last) / 1000);
+    this._last = t;
 
-    // Fallback bounds refresh if no ResizeObserver
-    if (!this._resizeObs) this._screenRect = this.rootEl.getBoundingClientRect();
-
-    this._spawnTimer += dt * 1000;
-    if (this._spawnTimer >= this._spawnEveryMs) {
-      this._spawnTimer = 0;
-      if (this._targets.length < this._maxTargets) this._spawnOne();
+    // Spawn only if none exist
+    if (this._targets.length < 1) {
+      this._spawnT += dt * 1000;
+      if (this._spawnT >= this._spawnEvery) {
+        this._spawnT = 0;
+        this._spawnOne();
+      }
+    } else {
+      // keep timer from exploding while target is alive
+      this._spawnT = 0;
     }
 
-    this._tickTargets(dt);
-
+    this._tick(dt);
     this._raf = requestAnimationFrame(() => this._loop());
   }
 
-  _spawnOne() {
-    const r = this._screenRect || this.rootEl.getBoundingClientRect();
+  _chooseType() {
+    // Special attack only when pending from a missed bear
+    if (this._pendingBearAttack) {
+      this._pendingBearAttack = false;
+      return "bear_attack";
+    }
 
-    // Choose direction randomly
+    // Normal rarity (attack is NOT included here)
+    // squirrel 40%, rabbit 30%, deer 20%, bear 8% (remaining 2% is conditional attack)
+    return pickWeighted([
+      { key: "squirrel", w: 40 },
+      { key: "rabbit", w: 30 },
+      { key: "deer", w: 20 },
+      { key: "bear", w: 8 }
+    ]);
+  }
+
+  _spriteFor(type, fromLeft) {
+    // fromLeft=true means it moves left->right, so we want RIGHT-facing sprite
+    const dir = fromLeft ? "right" : "left";
+
+    if (type === "bear_attack") {
+      // One image (no facing)
+      return this.assets.bear_attack;
+    }
+
+    const key = `${type}_${dir}`;
+    if (key === "squirrel_right") return this.assets.squirrel_right;
+    if (key === "squirrel_left") return this.assets.squirrel_left;
+
+    if (key === "rabbit_right") return this.assets.rabbit_right;
+    if (key === "rabbit_left") return this.assets.rabbit_left;
+
+    if (key === "deer_right") return this.assets.deer_right;
+    if (key === "deer_left") return this.assets.deer_left;
+
+    if (key === "bear_right") return this.assets.bear_right;
+    if (key === "bear_left") return this.assets.bear_left;
+
+    // Fallback
+    return this.assets.squirrel_right;
+  }
+
+  _spawnOne() {
+    const r = this.rootEl.getBoundingClientRect();
+
+    const type = this._chooseType();
     const fromLeft = Math.random() < 0.5;
 
-    // Y band: keep targets away from UI bottom buttons; tune later.
+    // Size + speed tuned by screen width
+    // Attack can be slightly larger, bears slightly larger
+    const baseSize = r.width * (0.12 + Math.random() * 0.06);
+    const size =
+      type === "bear_attack" ? baseSize * 1.2 :
+      type === "bear" ? baseSize * 1.15 :
+      type === "deer" ? baseSize * 1.05 :
+      baseSize;
+
+    const baseSpeed = r.width * (0.22 + Math.random() * 0.18);
+    const speed =
+      type === "bear_attack" ? baseSpeed * 1.25 :
+      type === "bear" ? baseSpeed * 0.95 :
+      baseSpeed;
+
+    // Y band (avoid bottom UI / frame edges)
     const yMin = r.top + r.height * 0.28;
     const yMax = r.top + r.height * 0.72;
-    const yPx = yMin + Math.random() * (yMax - yMin);
+    const y = yMin + Math.random() * (yMax - yMin);
 
-    const size = r.width * (0.12 + Math.random() * 0.06); // 12–18% of width
-    const speed = r.width * (0.22 + Math.random() * 0.18); // px/s
-
-    const xStart = fromLeft ? (r.left - size) : (r.right + size);
-    const xEnd = fromLeft ? (r.right + size) : (r.left - size);
+    // Always start OFF-SCREEN with a margin
+    const margin = Math.max(24, r.width * 0.03);
+    const xStart = fromLeft ? (r.left - size - margin) : (r.right + margin);
+    const xEnd = fromLeft ? (r.right + margin) : (r.left - size - margin);
 
     const el = document.createElement("img");
     el.alt = "";
     el.draggable = false;
     el.decoding = "async";
 
-    // Directional sprite
-    el.src = fromLeft ? this.assets.squirrel_right : this.assets.squirrel_left;
+    el.src = this._spriteFor(type, fromLeft);
 
     el.style.position = "fixed";
     el.style.left = `${xStart}px`;
-    el.style.top = `${yPx}px`;
+    el.style.top = `${y}px`;
     el.style.width = `${size}px`;
     el.style.height = "auto";
-    el.style.zIndex = "20";
+    el.style.zIndex = "25";
+
+    el.style.pointerEvents = "auto"; // clickable
     el.style.userSelect = "none";
     el.style.webkitUserSelect = "none";
     el.style.touchAction = "none";
 
-    // Targets must be clickable; layer is pointer-events none.
-    el.style.pointerEvents = "auto";
-
     const target = {
-      el,
+      type,
       fromLeft,
+      el,
       x: xStart,
-      y: yPx,
-      size,
+      y,
       speed: fromLeft ? speed : -speed,
       xEnd,
       alive: true
     };
 
-    // Click = hit
     el.addEventListener("pointerdown", (e) => {
-      // Don’t let this interfere with your hitbox layer behind it.
       e.preventDefault();
       e.stopPropagation();
 
       if (!target.alive) return;
       target.alive = false;
 
-      // Remove immediately for responsiveness
-      if (el.parentNode) el.parentNode.removeChild(el);
+      try { el.remove(); } catch (_) {}
+      this._targets = [];
 
-      // Callback for score
       if (this.onScore) this.onScore(1);
-      this._targets = this._targets.filter((t) => t !== target);
     }, { passive: false });
 
-    this._container.appendChild(el);
-    this._targets.push(target);
+    this.targetsLayerEl.appendChild(el);
+    this._targets = [target];
   }
 
-  _tickTargets(dt) {
-    const r = this._screenRect;
-    if (!r) return;
+  _tick(dt) {
+    if (!this._targets.length) return;
 
-    const toRemove = [];
-
-    for (const t of this._targets) {
-      if (!t.alive) { toRemove.push(t); continue; }
-
-      t.x += t.speed * dt;
-      t.el.style.left = `${t.x}px`;
-
-      const passed =
-        (t.speed > 0 && t.x >= t.xEnd) ||
-        (t.speed < 0 && t.x <= t.xEnd);
-
-      if (passed) {
-        t.alive = false;
-        if (t.el && t.el.parentNode) t.el.parentNode.removeChild(t.el);
-        toRemove.push(t);
-        if (this.onMiss) this.onMiss();
-      }
+    const t = this._targets[0];
+    if (!t || !t.alive) {
+      this._targets = [];
+      return;
     }
 
-    if (toRemove.length) {
-      this._targets = this._targets.filter((t) => !toRemove.includes(t));
+    t.x += t.speed * dt;
+    t.el.style.left = `${t.x}px`;
+
+    const passed =
+      (t.speed > 0 && t.x >= t.xEnd) ||
+      (t.speed < 0 && t.x <= t.xEnd);
+
+    if (passed) {
+      // MISS
+      t.alive = false;
+      try { t.el.remove(); } catch (_) {}
+      this._targets = [];
+
+      // Special rule: missing a bear triggers next spawn = bear attack target
+      if (t.type === "bear") {
+        this._pendingBearAttack = true;
+      }
+
+      if (this.onMiss) this.onMiss();
     }
   }
 }
