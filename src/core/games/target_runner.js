@@ -27,8 +27,8 @@ export class TargetRunner {
     this.onMiss = typeof opts.onMiss === "function" ? opts.onMiss : null;
 
     this.assets = opts.assets || {
-      squirrel_right: "assets/targets/squirrel_right.webp",
-      squirrel_left: "assets/targets/squirrel_left.webp"
+      squirrel_right: "assets/targets/squirrel-right-facing.webp",
+      squirrel_left: "assets/targets/squirrel-left-facing.webp"
     };
 
     this._running = false;
