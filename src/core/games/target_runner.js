@@ -1,251 +1,235 @@
-// src/games/target_runner.js
-// Additive: lightweight runner for moving targets in a hunt screen.
-// No external dependencies. Cleans up fully on stop().
-
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
+function pickWeighted(entries) {
+  const total = entries.reduce((s, e) => s + e.w, 0);
+  let r = Math.random() * total;
+  for (const e of entries) {
+    r -= e.w;
+    if (r <= 0) return e.key;
+  }
+  return entries[entries.length - 1].key;
 }
 
-function now() {
-  return performance && performance.now ? performance.now() : Date.now();
+function clamp(n, a, b) {
+  return Math.max(a, Math.min(b, n));
 }
 
 export class TargetRunner {
-  /**
-   * @param {Object} opts
-   * @param {HTMLElement} opts.rootEl - The hunt screen element (screen[data-screen="hunt_oregon_trail"])
-   * @param {HTMLElement} [opts.targetsLayerEl] - Optional layer to append targets into
-   * @param {Function} [opts.onScore] - callback(delta) when a target is hit
-   * @param {Function} [opts.onMiss] - callback() when a target escapes
-   * @param {Object} [opts.assets] - sprite urls for targets
-   */
-  constructor(opts) {
-    this.rootEl = opts.rootEl;
-    this.targetsLayerEl = opts.targetsLayerEl || null;
+  constructor({ rootEl, targetsLayerEl, config, onResult } = {}) {
+    this.rootEl = rootEl;
+    this.layer = targetsLayerEl;
+    this.onResult = onResult;
 
-    this.onScore = typeof opts.onScore === "function" ? opts.onScore : null;
-    this.onMiss = typeof opts.onMiss === "function" ? opts.onMiss : null;
-
-    this.assets = opts.assets || {
-      squirrel_right: "assets/targets/squirrel_right.webp",
-      squirrel_left: "assets/targets/squirrel_left.webp"
+    this.config = {
+      trackYPercent: 56,
+      stripeCenterXPercent: 50,
+      stripeHalfWidthPercent: 12,
+      perfectBandPercent: 2.5,
+      goodBandPercent: 5.5,
+      grazeBandPercent: 9.0,
+      spawnIntervalMs: 950,
+      speedPercentPerSec: 28,
+      sizes: { squirrel: 14, rabbit: 15, deer: 16, bear: 18, bear_attack: 18 },
+      ...config
     };
 
-    this._running = false;
-    this._raf = 0;
-    this._lastT = 0;
+    this.running = false;
+    this.raf = 0;
+    this.lastT = 0;
+    this.spawnTimer = 0;
 
-    this._spawnTimer = 0;
-    this._spawnEveryMs = 950; // tune later
-    this._targets = [];
-    this._maxTargets = 3;
+    this.active = null;
+    this.pendingBearAttack = false;
 
-    this._screenRect = null;
-    this._resizeObs = null;
-
-    this._container = null;
+    // Filenames must match your assets folder EXACTLY.
+    this.assets = {
+      squirrel: {
+        left: "assets/targets/squirrel-left-facing.webp",
+        right: "assets/targets/squirrel-right-facing.webp"
+      },
+      rabbit: {
+        left: "assets/targets/rabbit-left-facing.webp",
+        right: "assets/targets/rabbit-right-facing.webp"
+      },
+      deer: {
+        left: "assets/targets/deer-left-facing.webp",
+        right: "assets/targets/deer-right-facing.webp"
+      },
+      bear: {
+        left: "assets/targets/bear-left-facing.webp",
+        right: "assets/targets/bear-right-facing.webp"
+      },
+      bear_attack: {
+        single: "assets/targets/bear-attack-target.webp"
+      }
+    };
   }
 
   start() {
-    if (this._running) return;
-    this._running = true;
+    if (this.running) return;
+    if (!this.rootEl || !this.layer) return;
 
-    // Ensure a targets layer exists (additive).
-    this._container = this.targetsLayerEl || this._ensureTargetsLayer();
-
-    // Cache bounds, keep updated.
-    this._screenRect = this.rootEl.getBoundingClientRect();
-    this._installResizeObserver();
-
-    this._lastT = now();
-    this._loop();
+    this.running = true;
+    this.lastT = performance.now();
+    this.spawnTimer = 0;
+    this.loop();
   }
 
   stop() {
-    if (!this._running) return;
-    this._running = false;
+    this.running = false;
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.raf = 0;
 
-    if (this._raf) cancelAnimationFrame(this._raf);
-    this._raf = 0;
+    if (this.active?.el) this.active.el.remove();
+    this.active = null;
+  }
 
-    this._uninstallResizeObserver();
-
-    // Remove any spawned targets (DOM cleanup).
-    for (const t of this._targets) {
-      if (t && t.el && t.el.parentNode) t.el.parentNode.removeChild(t.el);
+  chooseType() {
+    if (this.pendingBearAttack) {
+      this.pendingBearAttack = false;
+      return "bear_attack";
     }
-    this._targets = [];
-
-    // Do not remove container if it existed already (safe).
-    // If we created it, we can remove it to prevent leakage.
-    if (this._container && this._container.dataset && this._container.dataset.vcCreated === "1") {
-      if (this._container.parentNode) this._container.parentNode.removeChild(this._container);
-    }
-    this._container = null;
+    return pickWeighted([
+      { key: "squirrel", w: 40 },
+      { key: "rabbit", w: 30 },
+      { key: "deer", w: 20 },
+      { key: "bear", w: 8 }
+    ]);
   }
 
-  setSpawnRate(ms) {
-    this._spawnEveryMs = clamp(Number(ms || 0), 200, 5000);
-  }
+  spawn() {
+    if (this.active) return;
 
-  setMaxTargets(n) {
-    this._maxTargets = clamp(Number(n || 0), 1, 10);
-  }
+    const type = this.chooseType();
+    const dir = Math.random() < 0.5 ? "L2R" : "R2L";
 
-  _ensureTargetsLayer() {
-    // Preferred: find an existing .layer-targets inside the active hunt screen.
-    let layer = this.rootEl.querySelector(".layer-targets");
-    if (!layer) {
-      layer = document.createElement("div");
-      layer.className = "layer layer-targets";
-      layer.dataset.vcCreated = "1";
-      // Put it above bg, below UI if present.
-      // If your engine has ordering, append near the end but before hitboxes layer.
-      this.rootEl.appendChild(layer);
-    }
-    // Ensure it can position absolute children
-    layer.style.position = layer.style.position || "absolute";
-    layer.style.inset = layer.style.inset || "0";
-    layer.style.pointerEvents = "none"; // targets themselves will re-enable
-    return layer;
-  }
+    const wPct = Number(this.config.sizes?.[type] ?? 15);
+    const speed = Number(this.config.speedPercentPerSec ?? 28) * (dir === "L2R" ? 1 : -1);
 
-  _installResizeObserver() {
-    try {
-      this._resizeObs = new ResizeObserver(() => {
-        this._screenRect = this.rootEl.getBoundingClientRect();
-      });
-      this._resizeObs.observe(this.rootEl);
-    } catch (_) {
-      this._resizeObs = null;
-      // Fallback: update bounds occasionally in loop
-    }
-  }
+    // Off-screen only
+    const marginPct = 6;
+    const startXPct = dir === "L2R" ? -(wPct + marginPct) : (100 + marginPct);
+    const endXPct = dir === "L2R" ? (100 + marginPct) : -(wPct + marginPct);
 
-  _uninstallResizeObserver() {
-    try {
-      if (this._resizeObs) this._resizeObs.disconnect();
-    } catch (_) {}
-    this._resizeObs = null;
-  }
+    const yPct = clamp(Number(this.config.trackYPercent ?? 56), 0, 100);
 
-  _loop() {
-    if (!this._running) return;
+    const img = document.createElement("img");
+    img.alt = "";
+    img.decoding = "async";
+    img.draggable = false;
 
-    const t = now();
-    const dt = Math.min(0.05, (t - this._lastT) / 1000); // cap dt to avoid jumps
-    this._lastT = t;
-
-    // Fallback bounds refresh if no ResizeObserver
-    if (!this._resizeObs) this._screenRect = this.rootEl.getBoundingClientRect();
-
-    this._spawnTimer += dt * 1000;
-    if (this._spawnTimer >= this._spawnEveryMs) {
-      this._spawnTimer = 0;
-      if (this._targets.length < this._maxTargets) this._spawnOne();
+    if (type === "bear_attack") {
+      img.src = this.assets.bear_attack.single;
+    } else {
+      img.src = dir === "L2R" ? this.assets[type].right : this.assets[type].left;
     }
 
-    this._tickTargets(dt);
+    img.onerror = () => console.error("[hunt] Missing image:", img.src);
 
-    this._raf = requestAnimationFrame(() => this._loop());
-  }
+    img.style.position = "absolute";
+    img.style.left = `${startXPct}%`;
+    img.style.top = `${yPct}%`;
+    img.style.width = `${wPct}%`;
+    img.style.transform = "translateY(-50%)";
+    img.style.pointerEvents = "none";
 
-  _spawnOne() {
-    const r = this._screenRect || this.rootEl.getBoundingClientRect();
+    this.layer.appendChild(img);
 
-    // Choose direction randomly
-    const fromLeft = Math.random() < 0.5;
-
-    // Y band: keep targets away from UI bottom buttons; tune later.
-    const yMin = r.top + r.height * 0.28;
-    const yMax = r.top + r.height * 0.72;
-    const yPx = yMin + Math.random() * (yMax - yMin);
-
-    const size = r.width * (0.12 + Math.random() * 0.06); // 12–18% of width
-    const speed = r.width * (0.22 + Math.random() * 0.18); // px/s
-
-    const xStart = fromLeft ? (r.left - size) : (r.right + size);
-    const xEnd = fromLeft ? (r.right + size) : (r.left - size);
-
-    const el = document.createElement("img");
-    el.alt = "";
-    el.draggable = false;
-    el.decoding = "async";
-
-    // Directional sprite
-    el.src = fromLeft ? this.assets.squirrel_right : this.assets.squirrel_left;
-
-    el.style.position = "fixed";
-    el.style.left = `${xStart}px`;
-    el.style.top = `${yPx}px`;
-    el.style.width = `${size}px`;
-    el.style.height = "auto";
-    el.style.zIndex = "20";
-    el.style.userSelect = "none";
-    el.style.webkitUserSelect = "none";
-    el.style.touchAction = "none";
-
-    // Targets must be clickable; layer is pointer-events none.
-    el.style.pointerEvents = "auto";
-
-    const target = {
-      el,
-      fromLeft,
-      x: xStart,
-      y: yPx,
-      size,
-      speed: fromLeft ? speed : -speed,
-      xEnd,
+    this.active = {
+      type,
+      dir,
+      el: img,
+      xPct: startXPct,
+      endXPct,
+      speedPctPerSec: speed,
+      wPct,
       alive: true
     };
-
-    // Click = hit
-    el.addEventListener("pointerdown", (e) => {
-      // Don’t let this interfere with your hitbox layer behind it.
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (!target.alive) return;
-      target.alive = false;
-
-      // Remove immediately for responsiveness
-      if (el.parentNode) el.parentNode.removeChild(el);
-
-      // Callback for score
-      if (this.onScore) this.onScore(1);
-      this._targets = this._targets.filter((t) => t !== target);
-    }, { passive: false });
-
-    this._container.appendChild(el);
-    this._targets.push(target);
   }
 
-  _tickTargets(dt) {
-    const r = this._screenRect;
-    if (!r) return;
+  fire() {
+    const cfg = this.config;
+    const stripeX = clamp(Number(cfg.stripeCenterXPercent ?? 50), 0, 100);
+    const half = Math.max(1, Number(cfg.stripeHalfWidthPercent ?? 12));
 
-    const toRemove = [];
+    if (!this.active || !this.active.alive) {
+      const r = { outcome: "miss", points: 0, type: null };
+      this.onResult?.(r);
+      return r;
+    }
 
-    for (const t of this._targets) {
-      if (!t.alive) { toRemove.push(t); continue; }
+    const t = this.active;
+    const centerX = t.xPct + (t.wPct / 2);
+    const dist = Math.abs(centerX - stripeX);
 
-      t.x += t.speed * dt;
-      t.el.style.left = `${t.x}px`;
+    if (dist > half) {
+      const r = { outcome: "miss", points: 0, type: t.type };
+      this.onResult?.(r);
+      return r;
+    }
 
-      const passed =
-        (t.speed > 0 && t.x >= t.xEnd) ||
-        (t.speed < 0 && t.x <= t.xEnd);
+    const perfect = Number(cfg.perfectBandPercent ?? 2.5);
+    const good = Number(cfg.goodBandPercent ?? 5.5);
+    const graze = Number(cfg.grazeBandPercent ?? 9.0);
 
-      if (passed) {
-        t.alive = false;
-        if (t.el && t.el.parentNode) t.el.parentNode.removeChild(t.el);
-        toRemove.push(t);
-        if (this.onMiss) this.onMiss();
+    let outcome = "graze";
+    let points = 1;
+
+    if (dist <= perfect) { outcome = "perfect"; points = 3; }
+    else if (dist <= good) { outcome = "good"; points = 2; }
+    else if (dist <= graze) { outcome = "graze"; points = 1; }
+    else { outcome = "miss"; points = 0; }
+
+    if (points > 0) {
+      t.alive = false;
+      t.el.remove();
+      this.active = null;
+    }
+
+    const r = { outcome, points, type: t.type };
+    this.onResult?.(r);
+    return r;
+  }
+
+  tick(dtSec) {
+    if (!this.active || !this.active.alive) return;
+
+    const t = this.active;
+    t.xPct += t.speedPctPerSec * dtSec;
+    t.el.style.left = `${t.xPct}%`;
+
+    const passed =
+      (t.speedPctPerSec > 0 && t.xPct > t.endXPct) ||
+      (t.speedPctPerSec < 0 && t.xPct < t.endXPct);
+
+    if (passed) {
+      const escapedType = t.type;
+
+      t.alive = false;
+      t.el.remove();
+      this.active = null;
+
+      // Special attack ONLY if bear escapes off-screen
+      if (escapedType === "bear") {
+        this.pendingBearAttack = true;
+      }
+    }
+  }
+
+  loop() {
+    if (!this.running) return;
+
+    const t = performance.now();
+    const dt = Math.min(0.05, (t - this.lastT) / 1000);
+    this.lastT = t;
+
+    if (!this.active) {
+      this.spawnTimer += dt * 1000;
+      if (this.spawnTimer >= Number(this.config.spawnIntervalMs ?? 950)) {
+        this.spawnTimer = 0;
+        this.spawn();
       }
     }
 
-    if (toRemove.length) {
-      this._targets = this._targets.filter((t) => !toRemove.includes(t));
-    }
+    this.tick(dt);
+    this.raf = requestAnimationFrame(() => this.loop());
   }
 }
