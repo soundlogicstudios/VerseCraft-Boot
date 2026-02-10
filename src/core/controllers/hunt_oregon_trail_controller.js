@@ -1,4 +1,4 @@
-// src/controllers/hunt_oregon_trail_controller.js
+// src/core/controllers/hunt_oregon_trail_controller.js
 import { TargetRunner } from "../games/target_runner.js";
 
 let runner = null;
@@ -8,7 +8,6 @@ function getActiveScreen() {
 }
 
 function ensureTargetsLayer(screenEl) {
-  // Prefer existing layer if you have it.
   const existing = screenEl.querySelector(".layer-targets");
   if (existing) return existing;
 
@@ -32,13 +31,10 @@ function start() {
     rootEl: screenEl,
     targetsLayerEl: targetsLayer,
     assets: {
-      // Adjust to your real target sprites when ready:
       squirrel_right: "assets/targets/squirrel_right.webp",
       squirrel_left: "assets/targets/squirrel_left.webp"
     },
     onScore: (delta) => {
-      // Additive hook: later we’ll connect ammo/food/date here
-      // For now: just log so you know it works.
       console.log("[hunt] score +", delta);
     },
     onMiss: () => {
@@ -58,20 +54,15 @@ function stop() {
 }
 
 export function init_hunt_oregon_trail_controller() {
-  // Start/stop based on screen changes.
   window.addEventListener("vc:screenchange", () => {
-    // If we’re leaving hunt screen, stop.
     const active = getActiveScreen();
     if (!active) {
       stop();
       return;
     }
-    // If we’re on hunt screen and not running, start.
     if (!runner) start();
   });
 
-  // Also handle initial load if you land directly on the screen
-  // (debug navigation sometimes does that).
   setTimeout(() => {
     if (getActiveScreen() && !runner) start();
   }, 0);
