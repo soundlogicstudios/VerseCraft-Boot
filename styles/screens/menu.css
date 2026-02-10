@@ -1,3 +1,31 @@
-.screen[data-screen="menu"] .screen-bg {
+/* styles/screens/menu.css */
+/* Oregon Trail “splash menu” (background applied to the screen itself) */
+
+.screen[data-screen="menu"] {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+
+  /* ✅ splash menu background (hard fallback) */
   background-image: url("../../assets/backgrounds/splash.webp");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+/* If your HTML happens to include a .screen-bg, keep it supported too */
+.screen[data-screen="menu"] .screen-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url("../../assets/backgrounds/splash.webp");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+/* Hitbox layer safety */
+.screen[data-screen="menu"] .hitbox-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
 }
