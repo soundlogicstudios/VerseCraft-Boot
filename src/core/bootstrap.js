@@ -2,7 +2,7 @@ import { createRouter } from "./router.js";
 import { createScreenManager } from "./screen_manager.js";
 import { createInput } from "./input.js";
 import { init_hunt_oregon_trail_controller } from "./controllers/hunt_oregon_trail_controller.js";
-init_hunt_oregon_trail_controller();
+
 function is_debug_enabled() {
   try {
     const params = new URLSearchParams(location.search);
@@ -24,18 +24,17 @@ async function main() {
 
   const registry = await load_registry();
 
-  const screenManager = createScreenManager({
-    registry,
-    rootEl: document.getElementById("appRoot")
-  });
+  const rootEl = document.getElementById("appRoot");
+  if (!rootEl) throw new Error("Missing #appRoot in index.html");
 
+  const screenManager = createScreenManager({ registry, rootEl });
   const router = createRouter({ screenManager, registry });
 
-  createInput({ rootEl: document.getElementById("appRoot"), router });
+  // Keep input wired
+  createInput({ rootEl, router });
 
   // Debug-only toolkit (loads its own CSS)
   if (debug) {
-    // Load toolkit CSS (only in debug)
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = "styles/debug_toolkit.css";
@@ -45,8 +44,39 @@ async function main() {
     mod.init_debug_toolkit();
   }
 
-  // Initial screen
-  router.go(registry.start_screen || "menu");
+  // Controllers should never be able to break boot.
+  // Init AFTER core is ready.
+  try {
+    init_hunt_oregon_trail_controller();
+  } catch (e) {
+    console.warn("[BOOT] Controller init failed (continuing):", e);
+  }
+
+  // =========================================================
+  // START SCREEN (GUARANTEED)
+  // =========================================================
+  const startId = String(registry.start_screen || "menu").trim() || "menu";
+
+  // 1) Try router navigation (normal path)
+  try {
+    router.go(startId);
+  } catch (e) {
+    console.warn("[BOOT] router.go failed, falling back to screenManager.show:", e);
+  }
+
+  // 2) HARD FAILSAFE: if still no active screen, force show
+  setTimeout(async () => {
+    const activeCount = rootEl.querySelectorAll(".screen.is-active").length;
+    if (activeCount === 0) {
+      console.warn("[BOOT] No active screen detected. Forcing show:", startId);
+      await screenManager.show(startId);
+    }
+
+    const activeId =
+      rootEl.querySelector(".screen.is-active")?.getAttribute("data-screen") || null;
+
+    console.log("[BOOT] Active screen:", activeId);
+  }, 0);
 }
 
 main().catch((err) => {
