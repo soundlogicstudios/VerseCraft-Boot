@@ -1,7 +1,5 @@
-// src/core/games/target_runner.js
-// Oregon Trail hunting target runner
-// Single target at a time, off-screen spawns, rarity-based animals,
-// conditional bear-attack target, correct facing by direction.
+/* src/core/games/target_runner.js */
+/* Oregon Trail hunting target runner */
 
 function now() {
   return performance?.now ? performance.now() : Date.now();
@@ -30,11 +28,13 @@ export class TargetRunner {
     this.spawnTimer = 0;
 
     this.activeTarget = null;
+
+    /* default values */
     this.spawnInterval = 950;
+    this.maxTargets = 1;
 
     this.pendingBearAttack = false;
 
-    // ✅ SINGLE SOURCE OF TRUTH FOR FILENAMES
     this.assets = {
       squirrel: {
         left: "assets/targets/squirrel-left-facing.webp",
@@ -57,6 +57,26 @@ export class TargetRunner {
       }
     };
   }
+
+  /* =========================================================
+     ✅ REQUIRED BY YOUR CONTROLLER
+     ========================================================= */
+
+  setSpawnRate(ms) {
+    const n = Number(ms);
+    if (!isNaN(n) && n > 0) {
+      this.spawnInterval = n;
+    }
+  }
+
+  setMaxTargets(n) {
+    const v = Number(n);
+    if (!isNaN(v) && v >= 1) {
+      this.maxTargets = v;
+    }
+  }
+
+  /* ========================================================= */
 
   start() {
     if (this.running) return;
@@ -108,6 +128,8 @@ export class TargetRunner {
     if (this.activeTarget) return;
 
     const rect = this.rootEl.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
     const type = this.chooseAnimal();
     const fromLeft = Math.random() < 0.5;
 
@@ -213,5 +235,7 @@ export class TargetRunner {
 
     this.tick(dt);
     this.raf = requestAnimationFrame(() => this.loop());
+  }
+}
   }
 }
