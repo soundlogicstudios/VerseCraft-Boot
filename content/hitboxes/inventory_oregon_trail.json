@@ -1,13 +1,6 @@
 {
   "hitboxes": [
-    {
-      "id": "back_to_character",
-      "x": 47.47,
-      "y": 82.89,
-      "w": 42.67,
-      "h": 6.75,
-      "action": "go:character_oregon_trail",
-      "label": "Back to Character"
-    }
+    { "id": "inv_to_char", "x": 2, "y": 2, "w": 26, "h": 10, "action": "go:character_oregon_trail", "label": "Back to Character" },
+    { "id": "inv_to_story", "x": 30, "y": 82, "w": 40, "h": 14, "action": "go:story_oregon_trail", "label": "Back to Story" }
   ]
 }
