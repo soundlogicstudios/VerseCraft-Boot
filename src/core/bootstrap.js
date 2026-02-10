@@ -1,8 +1,12 @@
+// src/core/bootstrap.js
+
 import { createRouter } from "./router.js";
 import { createScreenManager } from "./screen_manager.js";
 import { createInput } from "./input.js";
-import { init_hunt_oregon_trail_controller } from "./controllers/hunt_oregon_trail_controller.js";
-init_hunt_oregon_trail_controller();
+
+// 🚫 TEMPORARILY DISABLED — DO NOT IMPORT CONTROLLERS YET
+// import { init_hunt_oregon_trail_controller } from "./controllers/hunt_oregon_trail_controller.js";
+
 function is_debug_enabled() {
   try {
     const params = new URLSearchParams(location.search);
@@ -19,6 +23,9 @@ async function load_registry() {
 }
 
 async function main() {
+  window.__BOOT_VER = "v_boot_reset_001";
+  console.log("[BOOT]", window.__BOOT_VER);
+
   const debug = is_debug_enabled();
   if (debug) document.body.classList.add("debug");
 
@@ -31,11 +38,13 @@ async function main() {
 
   const router = createRouter({ screenManager, registry });
 
-  createInput({ rootEl: document.getElementById("appRoot"), router });
+  createInput({
+    rootEl: document.getElementById("appRoot"),
+    router
+  });
 
-  // Debug-only toolkit (loads its own CSS)
+  // Debug toolkit
   if (debug) {
-    // Load toolkit CSS (only in debug)
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = "styles/debug_toolkit.css";
@@ -45,11 +54,10 @@ async function main() {
     mod.init_debug_toolkit();
   }
 
-  // Initial screen
   router.go(registry.start_screen || "menu");
 }
 
 main().catch((err) => {
   console.error("[BOOT] Fatal error:", err);
-  alert("Boot error. Open console to see details.");
+});
 });
