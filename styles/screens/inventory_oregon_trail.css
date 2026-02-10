@@ -1,3 +1,3 @@
 .screen[data-screen="inventory_oregon_trail"] .screen-bg {
-  background-image: url("../../assets/backgrounds/oregon-trail-inventory-panel.webp");
+  background: radial-gradient(circle at 50% 40%, #2b2216, #000 70%);
 }
