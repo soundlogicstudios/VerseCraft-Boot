@@ -1,31 +1,8 @@
 {
   "hitboxes": [
-    {
-      "id": "back_to_trail",
-      "x": 24.53,
-      "y": 73.31,
-      "w": 65.33,
-      "h": 7.69,
-      "action": "go:story_oregon_trail",
-      "label": "Back to Trail"
-    },
-    {
-      "id": "go_hunting",
-      "x": 20.53,
-      "y": 81.0,
-      "w": 75.2,
-      "h": 6.91,
-      "action": "go:hunt_oregon_trail",
-      "label": "Go Hunting"
-    },
-    {
-      "id": "inventory",
-      "x": 20.53,
-      "y": 65.93,
-      "w": 74.4,
-      "h": 7.69,
-      "action": "go:inventory_oregon_trail",
-      "label": "Inventory"
-    }
+    { "id": "char_to_menu", "x": 2, "y": 2, "w": 22, "h": 10, "action": "go:menu", "label": "Menu" },
+    { "id": "char_to_story", "x": 30, "y": 82, "w": 40, "h": 14, "action": "go:story_oregon_trail", "label": "Back to Story" },
+    { "id": "char_to_hunt", "x": 30, "y": 64, "w": 40, "h": 14, "action": "go:hunt_oregon_trail", "label": "Go Hunting" },
+    { "id": "char_to_inventory", "x": 72, "y": 82, "w": 26, "h": 14, "action": "go:inventory_oregon_trail", "label": "Inventory" }
   ]
 }
