@@ -5,47 +5,43 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>VerseCraft Boot</title>
 
+  <!-- Base styling (keep your existing path) -->
   <link rel="stylesheet" href="styles/base.css" />
 </head>
 
 <body>
   <main id="appRoot" class="app-root" aria-label="VerseCraft Boot">
-    <!-- MENU (uses splash.webp as background) -->
-    <section class="screen" data-screen="menu" aria-label="Menu Screen">
-      <div class="screen-bg" aria-hidden="true"></div>
-      <div class="screen-runtime" aria-hidden="true"></div>
-      <div class="hitbox-layer" aria-label="Menu Hitboxes"></div>
+
+    <!-- MENU -->
+    <section class="screen" data-screen="menu" aria-label="Menu">
+      <div class="hitbox-layer" aria-hidden="true"></div>
     </section>
 
-    <!-- STORY: Oregon Trail -->
-    <section class="screen" data-screen="story_oregon_trail" aria-label="Oregon Trail Story Screen">
-      <div class="screen-bg" aria-hidden="true"></div>
-      <div class="screen-runtime" aria-label="Story Runtime Container"></div>
-      <div class="hitbox-layer" aria-label="Story Hitboxes"></div>
+    <!-- STORY: OREGON TRAIL -->
+    <section class="screen" data-screen="story_oregon_trail" aria-label="Oregon Trail Story">
+      <div class="hitbox-layer" aria-hidden="true"></div>
     </section>
 
-    <!-- CHARACTER: Oregon Trail -->
-    <section class="screen" data-screen="character_oregon_trail" aria-label="Oregon Trail Character Screen">
-      <div class="screen-bg" aria-hidden="true"></div>
-      <div class="screen-runtime" aria-label="Character Runtime Container"></div>
-      <div class="hitbox-layer" aria-label="Character Hitboxes"></div>
+    <!-- CHARACTER: OREGON TRAIL -->
+    <section class="screen" data-screen="character_oregon_trail" aria-label="Oregon Trail Character">
+      <div class="hitbox-layer" aria-hidden="true"></div>
     </section>
 
-    <!-- HUNT: Oregon Trail -->
-    <section class="screen" data-screen="hunt_oregon_trail" aria-label="Oregon Trail Hunt Screen">
+    <!-- HUNT: OREGON TRAIL -->
+    <section class="screen" data-screen="hunt_oregon_trail" aria-label="Oregon Trail Hunt">
+      <!-- If your hunt css expects a bg element, keep it here -->
       <div class="screen-bg" aria-hidden="true"></div>
-      <div class="screen-runtime" aria-label="Hunt Runtime Container"></div>
-      <div class="hitbox-layer" aria-label="Hunt Hitboxes"></div>
+      <div class="hitbox-layer" aria-hidden="true"></div>
     </section>
 
-    <!-- INVENTORY: Oregon Trail -->
-    <section class="screen" data-screen="inventory_oregon_trail" aria-label="Oregon Trail Inventory Screen">
-      <div class="screen-bg" aria-hidden="true"></div>
-      <div class="screen-runtime" aria-label="Inventory Runtime Container"></div>
-      <div class="hitbox-layer" aria-label="Inventory Hitboxes"></div>
+    <!-- INVENTORY: OREGON TRAIL -->
+    <section class="screen" data-screen="inventory_oregon_trail" aria-label="Oregon Trail Inventory">
+      <div class="hitbox-layer" aria-hidden="true"></div>
     </section>
+
   </main>
 
-  <script type="module" src="src/core/bootstrap.js"></script>
+  <!-- IMPORTANT: cache-bust iOS Safari -->
+  <script type="module" src="src/core/bootstrap.js?v=RESET001"></script>
 </body>
 </html>
