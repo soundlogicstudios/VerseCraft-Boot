@@ -1,5 +1,4 @@
 const loadedCss = new Set();
-const loadedControllers = new Set();
 
 function ensure_css_loaded(href) {
   if (!href || loadedCss.has(href)) return;
@@ -7,7 +6,6 @@ function ensure_css_loaded(href) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
   link.href = href;
-
   document.head.appendChild(link);
   loadedCss.add(href);
 }
@@ -56,40 +54,15 @@ function inject_hitboxes(screenEl, hitboxData) {
   }
 }
 
-/**
- * Load a controller module safely.
- * Controller module can export:
- *   - init({ screenEl, screenId, registry })
- *   - OR default export with init()
- */
-async function ensure_controller_loaded(controllerPath, ctx) {
-  if (!controllerPath) return;
-  const key = String(controllerPath).trim();
-  if (!key || loadedControllers.has(key)) return;
-
+function dispatch_screenchange(activeId) {
   try {
-    // Dynamic import MUST be a relative URL that the browser can fetch.
-    // controllerPath here is like "src/core/controllers/hunt_oregon_trail_controller.js"
-    const mod = await import(`../../${key}`.replace(/\/{2,}/g, "/"));
-    const initFn = mod?.init || mod?.default?.init || mod?.default;
-    if (typeof initFn === "function") {
-      await initFn(ctx);
-      loadedControllers.add(key);
-      console.log("[SCREEN] controller loaded:", key);
-    } else {
-      console.warn("[SCREEN] controller has no init():", key);
-      loadedControllers.add(key); // prevent re-tries spam
-    }
-  } catch (err) {
-    // CRITICAL: never black-screen just because a controller is missing.
-    console.warn("[SCREEN] controller load failed:", key, err);
-  }
+    window.dispatchEvent(new CustomEvent("vc:screenchange", { detail: { screen: activeId } }));
+  } catch (_) {}
 }
 
 export function createScreenManager({ registry, rootEl }) {
   const screens = new Map();
   const screenEls = Array.from(rootEl.querySelectorAll(".screen"));
-
   for (const el of screenEls) {
     const id = el.getAttribute("data-screen");
     if (id) screens.set(id, el);
@@ -123,19 +96,12 @@ export function createScreenManager({ registry, rootEl }) {
     screenEl.classList.add("is-active");
     active = id;
 
-    // Inject hitboxes
-    const hitboxData = await load_hitboxes(screenDef.hitboxes);
-    inject_hitboxes(screenEl, hitboxData);
+    // Hitboxes
+    const hb = await load_hitboxes(screenDef.hitboxes);
+    inject_hitboxes(screenEl, hb);
 
-    // ✅ Load controller (safe)
-    await ensure_controller_loaded(screenDef.controller, {
-      screenEl,
-      screenId: id,
-      registry
-    });
-
-    // Notify listeners (debug toolkit etc)
-    window.dispatchEvent(new CustomEvent("vc:screenchange", { detail: { screenId: id } }));
+    // Screen change event for controllers
+    dispatch_screenchange(active);
   }
 
   function get_active() {
